@@ -1,0 +1,10 @@
+node_modules
+.next
+.worker-build
+.git
+.env*
+!.env.worker.example
+*.log
+upload
+tests
+docs

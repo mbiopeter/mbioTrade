@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "daemons": {
+    "mbiotrade-worker": {
+      "root": ".",
+      "entrypoint": "Dockerfile.worker",
+      "instances": { "iad1": 1 },
+      "resources": { "requests": { "memory": "1Gi" } },
+      "terminationGracePeriodSeconds": 30
+    }
+  }
+}
