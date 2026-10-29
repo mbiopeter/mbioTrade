@@ -17,6 +17,9 @@ import {
   Volume2,
 } from "lucide-react";
 import { LiveChart } from "@/components/LiveChart";
+import {useHistoricalCandles} from "@/components/useHistoricalCandles";
+import {useSignalLedger} from "@/components/useSignalLedger";
+import {LEDGER_KEY,parseLedger} from "@/lib/v26-signals";
 import { StrengthGauge } from "@/components/StrengthGauge";
 import { DashboardSkeletonCards } from "@/components/DashboardSkeleton";
 import { ema } from "@/lib/indicators";
@@ -34,10 +37,8 @@ import {
 import {
   evaluateLiveFrame,
   inspectConfluence,
-  replayRecent,
   type FrameAnalysis,
   type IndicatorVote,
-  type ReplaySignal,
 } from "@/lib/v22/analysis";
 
 type FeedState = {
@@ -72,12 +73,12 @@ const EMPTY_DATA: MarketPayload = {
 };
 
 function price(value: number | null | undefined, precision: number) {
-  return value === null || value === undefined || !Number.isFinite(value) ? "—" : value.toFixed(precision);
+  return value === null || value === undefined || !Number.isFinite(value) ? "—" : value.toFixed(4);
 }
 function signedPrice(value: number | null | undefined, precision: number) {
   return value === null || value === undefined || !Number.isFinite(value)
     ? "—"
-    : `${value > 0 ? "+" : ""}${value.toFixed(precision)}`;
+    : `${value > 0 ? "+" : ""}${value.toFixed(4)}`;
 }
 function percent(value: number | null | undefined) {
   return value === null || value === undefined || !Number.isFinite(value)
@@ -331,16 +332,16 @@ function IndicatorCard({ vote }: { vote: IndicatorVote }) {
   );
 }
 
-function StatsCard({ signals }: { signals: ReplaySignal[] }) {
-  const wins = signals.filter((signal) => signal.r > 0);
-  const losses = signals.filter((signal) => signal.r < 0);
+function StatsCard({ signals }: { signals: {resultR:number|null}[] }) {
+  const wins = signals.filter((signal) => (signal.resultR??0)>0);
+  const losses = signals.filter((signal) => (signal.resultR??0)<0);
   const total = signals.length;
   const winRate = total ? Math.round((wins.length / total) * 100) : 0;
-  const avgWin = wins.length ? wins.reduce((sum, item) => sum + item.r, 0) / wins.length : 0;
-  const avgLoss = losses.length ? losses.reduce((sum, item) => sum + item.r, 0) / losses.length : 0;
-  const profitFactor = Math.abs(losses.reduce((sum, item) => sum + item.r, 0)) > 0
-    ? wins.reduce((sum, item) => sum + item.r, 0) / Math.abs(losses.reduce((sum, item) => sum + item.r, 0))
-    : wins.length ? wins.reduce((sum, item) => sum + item.r, 0) : 0;
+  const avgWin = wins.length ? wins.reduce((sum, item) => sum + (item.resultR??0), 0) / wins.length : 0;
+  const avgLoss = losses.length ? losses.reduce((sum, item) => sum + (item.resultR??0), 0) / losses.length : 0;
+  const profitFactor = Math.abs(losses.reduce((sum, item) => sum + (item.resultR??0), 0)) > 0
+    ? wins.reduce((sum, item) => sum + (item.resultR??0), 0) / Math.abs(losses.reduce((sum, item) => sum + (item.resultR??0), 0))
+    : wins.length ? wins.reduce((sum, item) => sum + (item.resultR??0), 0) : 0;
 
   return (
     <div className="mbiotraders-stats-grid">
@@ -388,7 +389,7 @@ export function MarketDashboard() {
   const [symbol, setSymbol] = useBrowserSetting<MarketSymbol>("mbio-mbiotraders-symbol", "XAUUSD");
   const [frame, setFrame] = useBrowserSetting<Frame>("mbio-mbiotraders-frame", 300);
   const [audible, setAudible] = useBrowserSetting<boolean>("mbio-mbiotraders-audio", false);
-  const [momentumDays, setMomentumDays] = useBrowserSetting<MomentumDays>("mbio-mbiotraders-momentum-days", 7);
+  const [momentumDays, setMomentumDays] = useBrowserSetting<MomentumDays>("mbio-mbiotraders-momentum-days-v26", 7);
   const [now, setNow] = useState(0);
   const [alerted, setAlerted] = useState<{ id: string; symbol: MarketSymbol; time: number; status: string }[]>([]);
   const audio = useRef<AudioContext | null>(null);
@@ -408,11 +409,17 @@ export function MarketDashboard() {
 
   const instrument = INSTRUMENTS.find((item) => item.symbol === symbol) ?? INSTRUMENTS[0];
   const payload = feed.payload?.symbol === symbol ? feed.payload : EMPTY_DATA;
-  const safeMomentumDays = MOMENTUM_WINDOWS.includes(momentumDays) ? momentumDays : 5;
+  const safeMomentumDays = MOMENTUM_WINDOWS.includes(momentumDays) ? momentumDays : 7;
   const setup = useMemo(() => inspectConfluence(payload, now, safeMomentumDays), [payload, Math.floor(now / 10_000), safeMomentumDays]);
-  const latestReplay = useMemo(() => (feed.payload ? replayRecent(payload, 5, safeMomentumDays) : []), [payload, feed.payload, safeMomentumDays]);
-
-  const chartCandles = useMemo(() => payload.frames[frame] ?? [], [payload, frame]);
+  const [needsOlder5,setNeedsOlder5]=useState(false);
+  useEffect(()=>{try{setNeedsOlder5(Boolean(parseLedger(localStorage.getItem(LEDGER_KEY)).active[symbol]));}catch{setNeedsOlder5(false);}},[symbol]);
+  const chartHistory=useHistoricalCandles({symbol,frame,payload:feed.payload?.symbol===symbol?feed.payload:null});
+  const old5=useHistoricalCandles({symbol,frame:300,payload:feed.payload?.symbol===symbol?feed.payload:null,enabled:frame!==300&&needsOlder5});
+  const chartCandles=chartHistory.candles;
+  const tracked5=frame===300?chartHistory.candles:needsOlder5?old5.candles:(payload.frames[300]??[]);
+  const tracker=useSignalLedger({symbol,provider:payload.provider,setup,now,isLive:!feed.error&&Boolean(feed.payload)&&now-payload.fetchedAt<120000,bars5:tracked5,bars15:payload.frames[900]??[],barsH1:payload.frames[3600]??[],historyLoading:frame===300?chartHistory.loading:old5.loading});
+  useEffect(()=>{setNeedsOlder5(Boolean(tracker.active));},[tracker.active,symbol]);
+  const activeSignal=tracker.active,pendingSignal=tracker.pending,latestSignals=tracker.history.slice(0,5);
   const quoteFresh = feed.quoteAt !== null && now - feed.quoteAt < 120_000;
   const selected = useMemo(() => {
     if (feed.streaming && quoteFresh && feed.quote !== null && feed.quoteAt !== null && payload.provider === "deriv") {
@@ -438,25 +445,17 @@ export function MarketDashboard() {
   const movement = last && previous ? last.close - previous.close : null;
   const movementPercent = last && previous && previous.close > 0 ? (movement! / previous.close) * 100 : null;
   const isLive = !feed.error && Boolean(feed.payload) && (payload.provider === "twelvedata" ? now - payload.fetchedAt < 120_000 : quoteFresh || now - payload.fetchedAt < 120_000);
-  const displayedSignal = isLive ? setup.status : "WAIT";
+  const displayedSignal = activeSignal?.direction??"WAIT";
 
-  const canAlert = isLive && setup.status !== "WAIT" && Boolean(setup.signalId) && setup.time !== null && now - setup.time < 600_000;
-  useEffect(() => {
-    if (!feed.payload || feed.payload.symbol !== symbol) return;
-    if (!initialized.current) {
-      initialized.current = true;
-      previousSignal.current = setup.signalId;
-      return;
-    }
-    if (!canAlert || !setup.signalId || setup.signalId === previousSignal.current) return;
-    previousSignal.current = setup.signalId;
-    setAlerted((items) => [{ id: setup.signalId!, symbol, time: setup.time!, status: setup.status }, ...items].slice(0, 8));
-    if (audible) {
-      void audio.current?.resume().then(() => {
-        if (audio.current) beep(audio.current);
-      });
-    }
-  }, [canAlert, setup.signalId, setup.time, setup.status, symbol, audible, feed.payload]);
+  const canAlert=isLive&&activeSignal!==null&&now-activeSignal.openedAt<600000;
+  useEffect(()=>{
+    if(!tracker.ready)return;
+    if(!initialized.current){initialized.current=true;previousSignal.current=activeSignal?.id??null;return;}
+    if(!canAlert||!activeSignal||activeSignal.id===previousSignal.current)return;
+    previousSignal.current=activeSignal.id;
+    setAlerted(items=>[{id:activeSignal.id,symbol,time:activeSignal.openedAt,status:activeSignal.direction},...items].slice(0,8));
+    if (audible) void audio.current?.resume().then(()=>{if(audio.current)beep(audio.current);});
+  },[canAlert,activeSignal?.id,activeSignal?.direction,activeSignal?.openedAt,symbol,audible,tracker.ready]);
 
   const enableAlert = async () => {
     if (!audible) {
@@ -478,11 +477,11 @@ export function MarketDashboard() {
     : setup.frames[current].direction;
   const alignmentCount = FRAMES.filter((current) => setup.bias !== "NEUTRAL" && frameDirection(current) === setup.bias).length;
   const updated = feed.checkedAt ? dateTime(feed.checkedAt) : "—";
-  const signalAge = setup.time ? Math.max(0, Math.round((now - setup.time) / 60_000)) : null;
+  const signalAge = activeSignal ? Math.max(0,Math.round((now-activeSignal.openedAt)/60000)) : null;
 
 
   const keyLevels = useMemo(() => {
-    if (!chartCandles.length || currentPrice === null) {
+    if (!(payload.frames[300]??[]).length || currentPrice === null) {
       return {
         resistance2: null,
         resistance1: null,
@@ -491,8 +490,9 @@ export function MarketDashboard() {
         support2: null,
       };
     }
-    const recent36 = chartCandles.slice(-36);
-    const recent72 = chartCandles.slice(-72);
+    const completed5=(payload.frames[300]??[]).filter(c=>(c.time+300)*1000<=now);
+    const recent36 = completed5.slice(-36);
+    const recent72 = completed5.slice(-72);
     const highs36 = recent36.map((bar) => bar.high);
     const highs72 = recent72.map((bar) => bar.high);
     const lows36 = recent36.map((bar) => bar.low);
@@ -504,15 +504,17 @@ export function MarketDashboard() {
       support1: lows36.length ? Math.min(...lows36) : null,
       support2: lows72.length ? Math.min(...lows72) : null,
     };
-  }, [chartCandles, currentPrice]);
+  }, [payload, currentPrice,Math.floor(now/300000)]);
 
-  const recentForStats = useMemo(() => replayRecent(payload, 50, safeMomentumDays), [payload, safeMomentumDays]);
+  const recentForStats=tracker.history.slice(0,50);
   const displayIndicators = useMemo(() => {
     const byName = (part: string) => selected.indicators.find(item => item.name.includes(part));
     const chosen = [byName("Price / EMA 50"), byName("ADX"), byName("Williams"), byName("RSI (14)"), byName("CCI"), byName("Awesome"), byName("MACD"), byName("Stochastic"), byName("Bull / Bear")];
     return chosen.filter((item): item is IndicatorVote => Boolean(item));
   }, [selected]);
   const tradingViewUrl = `https://www.tradingview.com/symbols/${symbol}/`;
+  const sourceMatches=!activeSignal||activeSignal.provider===payload.provider;
+  const activeReason=activeSignal?"Active paper signal — indicator changes cannot cancel it. Only verified TP/SL can close it.":pendingSignal?`Awaiting two confirmed 5m closes beyond ${price(pendingSignal.level,4)} (${pendingSignal.direction==='BUY'?'resistance':'support'}).`:setup.reason;
 
   return (
     <main className="mbiotraders-page">
@@ -579,12 +581,13 @@ export function MarketDashboard() {
               <RefreshCcw size={16} />
             </button>
           </div>
+          <div className="mbiotraders-history-note">Chart history: {chartHistory.days.toFixed(0)}/90 days · {chartCandles.length.toLocaleString()} real candles{chartHistory.loading?" · loading…":chartHistory.days<89?" · provider coverage incomplete":" · loaded"}{chartHistory.error?` · ${chartHistory.error}`:""}</div>
           <div className="mbiotraders-chart-overlays">
             <div>EMA 50 <span className="mbiotraders-ema-fast">{price(ema50, instrument.precision)}</span></div>
             <div>EMA 200 <span className="mbiotraders-ema-slow">{price(ema200, instrument.precision)}</span></div>
           </div>
           {chartCandles.length ? (
-            <LiveChart candles={chartCandles} symbol={symbol} frame={frame} livePrice={quoteFresh ? feed.quote : null} liveAt={quoteFresh ? feed.quoteAt : null} signal={{ entry: isLive ? setup.entry : null, stop: isLive ? setup.stop : null, target: isLive ? setup.target : null, status: displayedSignal }} resistance={keyLevels.resistance1} support={keyLevels.support1} />
+            <LiveChart candles={chartCandles} symbol={symbol} frame={frame} livePrice={quoteFresh ? feed.quote : null} liveAt={quoteFresh ? feed.quoteAt : null} signal={sourceMatches?activeSignal:null} resistance={keyLevels.resistance1} support={keyLevels.support1} />
           ) : (
             <div className="mbiotraders-chart-empty">{feed.loading ? "Connecting to market data…" : "No completed candles available."}</div>
           )}
@@ -599,24 +602,25 @@ export function MarketDashboard() {
         <section className="mbiotraders-card mbiotraders-signal-card">
           <div className="mbiotraders-card-head">
             <h2>Current Signal</h2>
-            <span className={`mbiotraders-live-mini ${isLive ? "on" : ""}`}>{isLive ? "LIVE" : "WAIT"}</span>
+            <span className={`mbiotraders-live-mini ${isLive ? "on" : ""}`}>{activeSignal?"ACTIVE":isLive?"LIVE":"WAIT"}</span>
           </div>
           <div className={`mbiotraders-big-signal ${statusClass(displayedSignal)}`}>
             {displayedSignal === "BUY" ? <TrendingUp size={22} /> : displayedSignal === "SELL" ? <TrendingDown size={22} /> : <Clock3 size={20} />}
             {displayedSignal}
           </div>
           <div className="mbiotraders-signal-section">
-            <div className="mbiotraders-row-between"><span>Confluence</span><strong>{setup.score}%</strong></div>
-            <ConfidenceBar score={setup.score} />
+            <div className="mbiotraders-row-between"><span>{activeSignal?"At activation":"Confluence"}</span><strong>{activeSignal?.confidence??setup.score}%</strong></div>
+            <ConfidenceBar score={activeSignal?.confidence??setup.score} />
           </div>
           <div className="mbiotraders-details-list compact">
-            <div><span>Entry Zone</span><strong>{price(isLive ? setup.entry : null, instrument.precision)}</strong></div>
-            <div><span>Stop Loss</span><strong>{price(isLive ? setup.stop : null, instrument.precision)}</strong></div>
-            <div><span>Take Profit 1</span><strong>{price(isLive ? setup.target : null, instrument.precision)}</strong></div>
-            <div><span>Take Profit 2</span><strong>{price(isLive && setup.target !== null && setup.entry !== null ? setup.target + (setup.target - setup.entry) : null, instrument.precision)}</strong></div>
+            <div><span>Entry Zone</span><strong>{price(activeSignal?.entry,instrument.precision)}</strong></div>
+            <div><span>Stop Loss</span><strong>{price(activeSignal?.stop,instrument.precision)}</strong></div>
+            <div><span>Take Profit 1</span><strong>{price(activeSignal?.target,instrument.precision)}</strong></div>
+            <div><span>Floating return</span><strong>{activeSignal&&sourceMatches&&currentPrice!==null?`${((activeSignal.direction==='BUY'?1:-1)*(currentPrice-activeSignal.entry)/Math.abs(activeSignal.entry-activeSignal.stop)).toFixed(2)}R`:"—"}</strong></div>
             <div><span>R:R Ratio</span><strong>1 : 2</strong></div>
-            <div><span>Signal Time</span><strong>{isLive && setup.time ? `${time(setup.time)}${signalAge !== null ? ` (${signalAge} min ago)` : ""}` : "—"}</strong></div>
+            <div><span>Signal Time</span><strong>{activeSignal?`${time(activeSignal.openedAt)}${signalAge!==null?` (${signalAge} min ago)`:""}`:"—"}</strong></div>
           </div>
+          <div className="mbiotraders-tracking-note">{activeSignal?"TRACKING until TP/SL":pendingSignal?"WAITING for level breakout":"WAITING for qualifying signal"}{tracker.warning?` · ${tracker.warning}`:""}</div>
         </section>
 
         <section className="mbiotraders-card mbiotraders-align-card">
@@ -647,7 +651,7 @@ export function MarketDashboard() {
               </div>
             ))}
           </div>
-          <div className="mbiotraders-conclusion">Conclusion <span>{setup.reason}</span></div>
+          <div className="mbiotraders-conclusion">Conclusion <span>{activeReason}</span></div>
         </section>
 
         <section className="mbiotraders-card mbiotraders-levels-card">
@@ -680,16 +684,9 @@ export function MarketDashboard() {
           <div className="mbiotraders-card-head"><h2><Activity size={16} /> Recent Signals</h2></div>
           <div className="mbiotraders-recent-table">
             <div className="mbiotraders-table-head"><span>Time</span><span>Direction</span><span>Entry</span><span>TP</span><span>SL</span><span>Result</span></div>
-            {latestReplay.length ? latestReplay.map((item) => (
-              <div key={item.id} className="mbiotraders-table-row">
-                <span>{time(item.time)}</span>
-                <span className={statusClass(item.direction)}>{item.direction}</span>
-                <span>{price(item.entry, instrument.precision)}</span>
-                <span>{price(item.target, instrument.precision)}</span>
-                <span>{price(item.stop, instrument.precision)}</span>
-                <span className={item.r >= 0 ? "up" : "down"}>{item.r > 0 ? "+" : ""}{item.r.toFixed(1)}R</span>
-              </div>
-            )) : <div className="mbiotraders-empty-text">No completed recent outcomes yet.</div>}
+            {latestSignals.length?latestSignals.map(item=>(
+              <div key={item.id} className="mbiotraders-table-row"><span>{time(item.openedAt)}</span><span className={statusClass(item.direction)}>{item.direction}</span><span>{price(item.entry,4)}</span><span>{price(item.target,4)}</span><span>{price(item.stop,4)}</span><span className={item.status==='TP'?'up':'down'}>{item.status} {item.resultR===null?'':`${item.resultR>0?'+':''}${item.resultR.toFixed(2)}R`}</span></div>
+            )):<div className="mbiotraders-empty-text">No settled tracked signals yet. This browser saves the last 50 outcomes per market.</div>}
           </div>
         </section>
 

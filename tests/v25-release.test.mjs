@@ -36,7 +36,7 @@ test('failed HTTP requests retry automatically and do not discard verified earli
   assert.match(dashboard, /document\.addEventListener\("visibilitychange", onVisible\)/);
   assert.match(dashboard, /abort\.current\?\.abort\(\)/);
   assert.match(dashboard, /!feed\.error && Boolean\(feed\.payload\)/);
-  assert.match(dashboard, /const displayedSignal = isLive \? setup\.status : "WAIT"/);
+  assert.match(dashboard, /const displayedSignal = activeSignal\?\.direction\?\?"WAIT"/);
 });
 
 test('public streaming feed retries failed subscription and stalls', () => {

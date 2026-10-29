@@ -36,7 +36,7 @@ function num(value: unknown): number {
   if (typeof value !== "number" && typeof value !== "string") return NaN;
   return Number(value);
 }
-export function parseCandles(rows: unknown, frame: Frame, timeKey: "epoch" | "datetime"): Candle[] {
+export function parseCandles(rows: unknown, frame: Frame, timeKey: "epoch" | "datetime", minBars = 60): Candle[] {
   if (!Array.isArray(rows)) throw new Error(`Missing ${FRAME_LABELS[frame]} OHLC candles`);
   const seen = new Set<number>();
   const bars: Candle[] = [];
@@ -54,7 +54,7 @@ export function parseCandles(rows: unknown, frame: Frame, timeKey: "epoch" | "da
     bars.push({time,open,high,low,close});
   }
   bars.sort((a,b)=>a.time-b.time);
-  if (bars.length < 60) throw new Error(`${FRAME_LABELS[frame]} data has fewer than 60 valid actual bars`);
+  if (bars.length < minBars) throw new Error(`${FRAME_LABELS[frame]} data has fewer than 60 valid actual bars`);
   return bars;
 }
 

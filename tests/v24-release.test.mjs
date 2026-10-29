@@ -68,5 +68,5 @@ test('no order execution or authenticated broker tokens introduced in signal-onl
   assert.doesNotMatch(dashboard, /\b(buyContract|sellContract|DERIV_API_TOKEN|placeOrder|submitPurchase)\b/);
   assert.match(dashboard, /inspectConfluence/);
   assert.match(dashboard, /MOMENTUM_WINDOWS/);
-  assert.match(dashboard, /replayRecent/);
+  assert.match(dashboard, /useSignalLedger/);
 });

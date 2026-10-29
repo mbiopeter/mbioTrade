@@ -1,3 +1,16 @@
+# Change log
+
+## v26
+
+- Persistent per-pair active signal until 5-minute OHLC confirms TP/SL; no cancellation on indicator disagreement.
+- Per-pair last 50 settled signals and statistics in localStorage.
+- Wider ATR/swing based stop plan, conservative stop-first paper outcomes.
+- Opposite S/R gate with two completed 5-minute breakout candles.
+- 4-decimal price display and 7-trading-day momentum default.
+- Three-calendar-month history backfill by selected provider, where available.
+- Chart-attached green/red risk/target overlay that tracks chart scroll and zoom.
+- Fixed signal reconciliation to reject a different provider after source changes.
+
 # Changelog
 
 ## v25.0.0 — mbioTraders

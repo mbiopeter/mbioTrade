@@ -1015,3 +1015,15 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
   .mbiotraders-page { padding-top: 7px; }
   .mbiotraders-symbol-tab { flex-basis: 121px; }
 }
+
+/* mbioTraders: chart-attached, time/price-anchored active signal zones */
+.mbiotraders-position-overlay {position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden;}
+.mbiotraders-position-zone {position:absolute;border:1px solid transparent;opacity:.9;}
+.mbiotraders-position-zone.gain {background:rgba(24,180,108,.20);border-color:rgba(45,233,157,.52);}
+.mbiotraders-position-zone.risk {background:rgba(255,88,107,.16);border-color:rgba(250,92,116,.48);}
+.mbiotraders-position-level {position:absolute;border-top:1px dashed #eaf4ef;height:1px;}
+.mbiotraders-position-level span {position:absolute;right:5px;top:-18px;padding:2px 6px;border-radius:4px;background:#16333d;color:#eafaf8;font-size:10px;white-space:nowrap;}
+.mbiotraders-position-level.profit {border-color:#2ae4a0;}.mbiotraders-position-level.profit span {background:#0b5d46;}
+.mbiotraders-position-level.loss {border-color:#fc697c;}.mbiotraders-position-level.loss span {background:#702c3e;}
+.mbiotraders-history-note {position:absolute;z-index:5;bottom:7px;left:13px;right:75px;color:#7cb9aa;font-size:10px;background:#061923de;border:1px solid #153b46;border-radius:5px;padding:3px 7px;pointer-events:none;}
+.mbiotraders-tracking-note {padding:2px 14px 11px;color:#75dabb;font-size:11px;line-height:1.4;}

@@ -1,3 +1,20 @@
+# mbioTraders v26 — persistent signal tracking
+
+Signal-only market analysis: no live order execution, accounts or broker login. The previous nine-card dark layout, gauge, timeframes and sound alerts are retained.
+
+## Installation
+
+```bash
+npm ci
+npm run doctor
+npm test
+npm run check
+npm run build
+npm run dev
+```
+
+See `docs/V26-GUIDE.md` for the new signal and history behavior. Vercel continues to use `npm run build` and the existing environment settings. The fixed Next.js Open Graph image is retained.
+
 # mbioTraders v25 — Live Market Signal Dashboard
 
 A single-screen **Gold and Forex market signal research application**, based on the v23.1 dashboard layout. **No trade execution** or broker authentication. Market data is supplied by Twelve Data (if you configure a server-side key) or the free public Deriv history and streaming API. Missing/stale data blocks signals; prices are not generated or interpolated.

@@ -1,0 +1,15 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {emptyLedger,parseLedger,activate,update,reconcile,setPending,confirmedBreakout,plan} from '../src/lib/v26-signals.ts';
+import {merge,coverage} from '../src/lib/v26-history.ts';
+import {readFileSync} from 'node:fs';
+const t=Date.UTC(2026,9,28),stamp=t/1000;
+const pos=(id='a')=>({id,symbol:'XAUUSD',provider:'deriv',direction:'BUY',entry:2000,stop:1990,target:2020,openedAt:t,confidence:90,status:'ACTIVE',lastCheckedAt:t,closedAt:null,exitPrice:null,resultR:null});
+const bar=(time,high,low)=>({time,open:2000,high,low,close:2001});
+test('persistent one active signal on a pair',()=>{const b=activate(emptyLedger(),pos());assert.equal(activate(b,pos('b')),b);assert.deepEqual(parseLedger(JSON.stringify(b)).active.XAUUSD,pos());});
+test('signal does not disappear when strategy changes, only when TP/SL touched',()=>{const b=activate(emptyLedger(),pos());const active=reconcile(pos(),[bar(stamp,2010,1996)],t+300000).signal;assert.equal(active.status,'ACTIVE');const ended=reconcile(active,[bar(stamp+300,2024,1999)],t+600000).signal;assert.equal(ended.status,'TP');const updated=update(update(b,'XAUUSD',active),'XAUUSD',ended);assert.equal(updated.active.XAUUSD,undefined);assert.equal(updated.history.XAUUSD.length,1);});
+test('both TP and SL same candle resolves conservatively as SL',()=>assert.equal(reconcile(pos(),[bar(stamp,2024,1989)],t+300000).signal.status,'SL'));
+test('missing candles cannot manufacture an outcome',()=>{const r=reconcile(pos(),[bar(stamp+600,2024,1989)],t+900000);assert.equal(r.blocked,true);assert.equal(r.signal.status,'ACTIVE');});
+test('pending BUY at resistance needs two closes beyond level',()=>{const candidate={id:'q',symbol:'XAUUSD',direction:'BUY',level:2002,createdAt:t,confidence:88};const rows=[...Array.from({length:36},(_,i)=>bar(stamp-(36-i)*300,2001,1998)),{time:stamp,open:2002,high:2004,low:2001,close:2003},{time:stamp+300,open:2003,high:2004,low:2002,close:2003.3}];assert.ok(setPending(emptyLedger(),candidate).pending.XAUUSD);assert.equal(confirmedBreakout(candidate,rows,t+600000),t+600000);});
+test('50 settled results retained in local storage data model',()=>{let b=emptyLedger();for(let i=0;i<55;i++){const p=pos('n'+i);b=activate(b,p);b=update(b,'XAUUSD',{...p,status:'SL',closedAt:t+300000,exitPrice:p.stop,resultR:-1});}assert.equal(b.history.XAUUSD.length,50);});
+test('merged real candles are deduplicated and sorted',()=>{const one=[bar(stamp,2002,1999)],two=[bar(stamp-300,2002,1999),bar(stamp,2002,1999)];assert.equal(merge(one,two).length,2);assert.ok(coverage(merge(one,two),t+600000)>0);});
+test('v26 dashboard stores history, 7D default, 4 decimal and chart attachment',()=>{const source=readFileSync(new URL('../src/components/MarketDashboard.tsx',import.meta.url),'utf8'),chart=readFileSync(new URL('../src/components/LiveChart.tsx',import.meta.url),'utf8');assert.match(source,/useSignalLedger/);assert.match(source,/momentum-days-v26", 7/);assert.match(source,/toFixed\(4\)/);assert.match(chart,/timeToCoordinate/);assert.match(chart,/priceToCoordinate/);});

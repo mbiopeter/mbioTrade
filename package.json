@@ -1,8 +1,8 @@
 {
-  "name": "mbiotraders-v25",
-  "version": "25.0.0",
+  "name": "mbiotraders-v26",
+  "version": "26.0.0",
   "private": true,
-  "description": "mbioTraders v25: resilient auto-reconnecting live market signals, compact screenshot-style UI, louder chime and linked portfolio brand.",
+  "description": "mbioTraders v26: persistent broker-independent signals, wider stops, 90-day chart history and chart position zones",
   "engines": {
     "node": ">=22.16.0"
   },
