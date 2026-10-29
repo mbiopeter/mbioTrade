@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  transpilePackages: ["react-gauge-component"],
   poweredByHeader: false,
   typedRoutes: false,
   async headers() {

@@ -2,8 +2,12 @@ node_modules
 .next
 .env
 .env.local
-.env.worker
-.worker-build/
 *.tsbuildinfo
 *.log
 .DS_Store
+
+# Do not commit personal data, credentials, or old v17 SQLite files
+.env.server
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

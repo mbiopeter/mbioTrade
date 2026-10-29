@@ -1,34 +1,19 @@
 {
-  "name": "mbiotrade",
-  "version": "16.0.0",
+  "name": "mbiotraders-v25",
+  "version": "25.0.0",
   "private": true,
-  "description": "MbioTrade v16 — verified Next.js App Router startup, preserved Deriv trading and six trend-aligned strategies.",
+  "description": "mbioTraders v25: resilient auto-reconnecting live market signals, compact screenshot-style UI, louder chime and linked portfolio brand.",
   "engines": {
-    "node": ">=22.9.0"
+    "node": ">=22.16.0"
   },
   "scripts": {
-    "setup": "node scripts/setup.mjs",
     "dev": "next dev --webpack",
-    "dev:turbo": "next dev --turbopack",
     "build": "next build --webpack",
     "start": "next start",
-    "format": "prettier --write .",
-    "format:check": "node scripts/check-format.mjs",
     "check": "tsc --noEmit",
-    "check:config": "node scripts/check-config.mjs && node scripts/check-app-router.mjs && node scripts/check-maintainability.mjs && node scripts/check-imports.mjs",
-    "test": "node scripts/run-tests.mjs",
-    "verify": "npm run check:config && npm run check && npm test",
-    "quality": "npm run format:check && npm run verify",
-    "build:ready": "npm run quality && npm run build",
-    "worker": "node --env-file-if-exists=.env.worker --import tsx worker/run.ts",
-    "worker:check": "node --env-file-if-exists=.env.worker --import tsx worker/run.ts --check",
-    "worker:build": "tsc -p worker/tsconfig.json",
-    "predev": "node scripts/prepare-next.mjs",
-    "predev:turbo": "node scripts/prepare-next.mjs",
-    "prebuild": "node scripts/prepare-next.mjs",
-    "doctor": "node scripts/prepare-next.mjs --check",
-    "dev:clean": "node scripts/clear-next-cache.mjs && npm run dev",
-    "smoke:dev": "node scripts/smoke-next.mjs"
+    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test tests/*.test.mjs",
+    "verify": "npm run doctor && npm run test && npm run check && npm run build",
+    "doctor": "node scripts/doctor.mjs"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.2.0",
@@ -37,7 +22,8 @@
     "lucide-react": "^1.61.0",
     "next": "16.4.3",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "react-gauge-component": "2.0.29"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
@@ -52,5 +38,6 @@
   },
   "allowScripts": {
     "esbuild@0.28.2": true
-  }
+  },
+  "type": "module"
 }

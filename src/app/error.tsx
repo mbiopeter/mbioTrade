@@ -2,7 +2,7 @@
 
 /**
  * This error boundary must remain a Client Component in Next.js App Router.
- * The v16 preflight checks and repairs a missing/empty boundary before Next starts.
+ * The first directive is required by Next.js App Router (including in production).
  */
 export default function ErrorPage({
   reset,
@@ -12,7 +12,7 @@ export default function ErrorPage({
 }) {
   return (
     <div className="error-card" role="alert">
-      <h2>MbioTrade hit an unexpected error</h2>
+      <h2>mbioTraders hit an unexpected error</h2>
       <p>
         Your saved settings remain intact. Try this screen again; if the issue
         continues, reload the application.
