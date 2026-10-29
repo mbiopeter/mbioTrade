@@ -16,7 +16,7 @@ export default function OpenGraphImage() {
         <span style={{ fontSize: 26, letterSpacing: 2, color: "#b7d4ce" }}>LIVE MARKET SIGNALS</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column" }}>
-        <div style={{ fontSize: 88, fontWeight: 800, letterSpacing: -5 }}>mbio<span style={{ color: "#27e3a4" }}>Traders</span></div>
+        <div style={{ display: "flex", alignItems: "baseline", fontSize: 88, fontWeight: 800, letterSpacing: -5 }}>mbio<span style={{ color: "#27e3a4" }}>Traders</span></div>
         <div style={{ marginTop: 17, fontSize: 35, color: "#c1dad7" }}>Gold & Forex · Technical Analysis</div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 18, fontSize: 22, color: "#95cfc0" }}>

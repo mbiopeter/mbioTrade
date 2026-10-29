@@ -388,7 +388,7 @@ export function MarketDashboard() {
   const [symbol, setSymbol] = useBrowserSetting<MarketSymbol>("mbio-mbiotraders-symbol", "XAUUSD");
   const [frame, setFrame] = useBrowserSetting<Frame>("mbio-mbiotraders-frame", 300);
   const [audible, setAudible] = useBrowserSetting<boolean>("mbio-mbiotraders-audio", false);
-  const [momentumDays, setMomentumDays] = useBrowserSetting<MomentumDays>("mbio-mbiotraders-momentum-days", 7);
+  const [momentumDays, setMomentumDays] = useBrowserSetting<MomentumDays>("mbio-mbiotraders-momentum-days", 5);
   const [now, setNow] = useState(0);
   const [alerted, setAlerted] = useState<{ id: string; symbol: MarketSymbol; time: number; status: string }[]>([]);
   const audio = useRef<AudioContext | null>(null);
