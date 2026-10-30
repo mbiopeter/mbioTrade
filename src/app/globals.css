@@ -851,7 +851,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
   .mbiotraders-gauge-card { grid-area: gauge; }
   .mbiotraders-signal-card { grid-area: signal; }
   .mbiotraders-align-card { grid-area: align; }
-  .mbiotraders-setup-card { grid-area: setup; position: relative; z-index: 1; width: calc(100% + 35px); }
+  .mbiotraders-setup-card { grid-area: setup; position: relative; z-index: 1; width: calc(100% + 35px); overflow-y:auto;}
   .mbiotraders-levels-card { grid-area: levels; margin-left: 35px; }
   .mbiotraders-tech-card { grid-area: tech; margin-right: 25px; }
   .mbiotraders-recent-card { grid-area: recent; margin-left: -25px; }
