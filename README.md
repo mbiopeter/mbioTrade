@@ -1,13 +1,16 @@
-# mbioTraders v28
+# mbioTraders v29
 
 A responsive, signal-only Gold and forex analysis dashboard built with Next.js.
 
-## What changed
+## What changed in v29
 
-- Mobile header reorganized into brand/alert, connection status, market context and swipeable market/timeframe controls.
-- Live chart retains the time- and price-anchored long/short position boxes, without separate entry, stop-loss or take-profit lines.
-- Historical backfill now uses a TypeScript-narrowed, non-null provider identifier in asynchronous requests.
-- Application source, configuration, CSS and tests contain no authored code comments.
+- Recent Signals shows only **Time, Direction, Pair and Result**.
+- Exactly three completed signal records appear on each page, with Previous/Next navigation.
+- **Export CSV** downloads all stored results, not just the visible page. The CSV contains those four columns only.
+- The most recent **100 completed signals across all six pairs** remain saved in the existing browser localStorage ledger.
+- Existing v26–v28 saved signals and active positions are retained when upgrading on the same origin.
+- Market Statistics uses the same 100 most recent completed signal outcomes.
+- Retains the responsive mobile header, time- and price-anchored chart position drawings and TypeScript fixes from v28.
 
 ## Existing features retained
 
@@ -17,7 +20,7 @@ A responsive, signal-only Gold and forex analysis dashboard built with Next.js.
 - Real market feeds with retries and a bottom-right connection toast
 - Technical analysis, animated market-strength gauge and sound alerts
 - One persistent active signal per pair with wider stops and opposing-level confirmation
-- Stored outcomes and statistics (up to 50 per pair), four-decimal price labels and 90-day historical backfill where supported
+- Stored outcomes and statistics (the latest 100 completed signals across all pairs), four-decimal price labels and 90-day historical backfill where supported
 - Professional dark theme, responsive cards and skeleton loading states
 
 ## Installation
@@ -41,10 +44,12 @@ Copy `.env.example` into `.env.local` to configure `TWELVE_DATA_API_KEY` if you 
 
 ## Signal lifecycle
 
-The dashboard does not execute trades. Once a paper signal is activated, it persists in the current browser until verified history confirms that the stop or target was reached. Missing history does not create a synthetic outcome. Local storage is device-specific and is not a cross-device database.
+The dashboard does not execute trades. Once a paper signal is activated, it persists in the current browser until verified history confirms that the stop or target was reached. Missing history does not create a synthetic outcome. The 100 latest completed outcomes and any active signals use the original `mbiotraders-signals-v26` localStorage key, so normal upgrades preserve existing records on the same website address. Local storage is device-specific and is not a cross-device database.
+
+The Recent Signals table shows three outcomes per page. Time means the original signal-entry time, displayed in East Africa Time (EAT). Exported timestamps use unambiguous ISO 8601 UTC, and the CSV exports all stored rows, regardless of the page currently displayed. Once more than 100 outcomes are completed, the oldest ones are removed from local storage.
 
 ## Verification
 
 The automated tests check historical data, trend logic, the signal lifecycle, the mobile header and the price-line removal. A complete production build must be checked on a machine with the project dependencies installed.
 
-See `docs/V28-RELEASE.md` for detailed changes.
+See `docs/V29-RELEASE.md` for the updated Recent Signals behavior and `docs/V28-RELEASE.md` for the preceding responsive-design changes.

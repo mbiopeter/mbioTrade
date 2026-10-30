@@ -8,6 +8,7 @@ import {
   Check,
   ChartNoAxesCombined,
   Clock3,
+  Download,
   ExternalLink,
   Info,
   RefreshCcw,
@@ -21,6 +22,11 @@ import { ConnectionRetryToast } from "@/components/ConnectionRetryToast";
 import { useHistoricalCandles } from "@/components/useHistoricalCandles";
 import { useSignalLedger } from "@/components/useSignalLedger";
 import { LEDGER_KEY, parseLedger } from "@/lib/v26-signals";
+import {
+  exportSignalsCsv,
+  formatSignalResult,
+  signalPage,
+} from "@/lib/signal-history";
 import { StrengthGauge } from "@/components/StrengthGauge";
 import { DashboardSkeletonCards } from "@/components/DashboardSkeleton";
 import { ema } from "@/lib/indicators";
@@ -99,6 +105,17 @@ function time(value: number | null | undefined) {
     }) + " UTC"
     : "—";
 }
+function signalDateTime(value: number) {
+  return `${new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Nairobi",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(value))} EAT`;
+}
+
 function dateTime(value: number) {
   return new Date(value).toLocaleString("en-GB", {
     timeZone: "Africa/Nairobi",
@@ -453,10 +470,11 @@ export function MarketDashboard() {
     false,
   );
   const [momentumDays, setMomentumDays] = useBrowserSetting<MomentumDays>(
-    "mbio-mbiotraders-momentum-days-v26", // Preserve existing preferences.
+    "mbio-mbiotraders-momentum-days-v26",
     7,
   );
   const [now, setNow] = useState(0);
+  const [recentPage, setRecentPage] = useState(0);
   const [alerted, setAlerted] = useState<
     { id: string; symbol: MarketSymbol; time: number; status: string }[]
   >([]);
@@ -529,7 +547,26 @@ export function MarketDashboard() {
   }, [tracker.active, symbol]);
   const activeSignal = tracker.active;
   const pendingSignal = tracker.pending;
-  const latestSignals = tracker.history.slice(0, 5);
+  const latestSignals = tracker.historyAll;
+  const displayedHistory = signalPage(latestSignals, recentPage);
+
+  const downloadSignals = () => {
+    if (!latestSignals.length) return;
+
+    const csv = exportSignalsCsv(latestSignals);
+    const blob = new Blob(["\uFEFF", csv], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `mbiotraders-signals-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
   const quoteFresh = feed.quoteAt !== null && now - feed.quoteAt < 120_000;
   const selected = useMemo(() => {
     if (feed.streaming && quoteFresh && feed.quote !== null && feed.quoteAt !== null && payload.provider === "deriv") {
@@ -625,7 +662,7 @@ export function MarketDashboard() {
     };
   }, [payload, currentPrice, Math.floor(now / 300000)]);
 
-  const recentForStats = tracker.history.slice(0, 50);
+  const recentForStats = latestSignals;
   const displayIndicators = useMemo(() => {
     const byName = (part: string) => selected.indicators.find(item => item.name.includes(part));
     const chosen = [
@@ -957,35 +994,69 @@ export function MarketDashboard() {
           </section>
 
           <section className="mbiotraders-card mbiotraders-recent-card">
-            <div className="mbiotraders-card-head"><h2><Activity size={16} /> Recent Signals</h2></div>
+            <div className="mbiotraders-card-head mbiotraders-recent-head">
+              <h2><Activity size={16} /> Recent Signals</h2>
+              <button
+                type="button"
+                className="mbiotraders-export-button"
+                onClick={downloadSignals}
+                disabled={!latestSignals.length}
+                title="Export all stored signals as CSV"
+                aria-label="Export all recent signals as CSV"
+              >
+                <Download size={14} aria-hidden="true" /> Export CSV
+              </button>
+            </div>
             <div className="mbiotraders-recent-table">
               <div className="mbiotraders-table-head">
                 <span>Time</span>
                 <span>Direction</span>
-                <span>Entry</span>
-                <span>TP</span>
-                <span>SL</span>
+                <span>Pair</span>
                 <span>Result</span>
               </div>
-              {latestSignals.length ? latestSignals.map(item => (
-                <div key={item.id} className="mbiotraders-table-row">
-                  <span>{time(item.openedAt)}</span>
+              {displayedHistory.items.length ? displayedHistory.items.map((item) => (
+                <div key={`${item.symbol}:${item.id}`} className="mbiotraders-table-row">
+                  <span>{signalDateTime(item.openedAt)}</span>
                   <span className={statusClass(item.direction)}>{item.direction}</span>
-                  <span>{price(item.entry, 4)}</span>
-                  <span>{price(item.target, 4)}</span>
-                  <span>{price(item.stop, 4)}</span>
+                  <span className="mbiotraders-signal-pair">{item.symbol}</span>
                   <span className={item.status === "TP" ? "up" : "down"}>
-                    {item.status} {item.resultR === null
-                      ? ""
-                      : `${item.resultR > 0 ? "+" : ""}${item.resultR.toFixed(2)}R`}
+                    {formatSignalResult(item)}
                   </span>
                 </div>
-              )) : <div className="mbiotraders-empty-text">No settled tracked signals yet. This browser saves the last 50 outcomes per market.</div>}
+              )) : (
+                <div className="mbiotraders-empty-text">
+                  No completed signals yet. The latest 100 outcomes across all pairs are saved in this browser.
+                </div>
+              )}
+            </div>
+            <div className="mbiotraders-recent-pagination" aria-label="Recent signals pagination">
+              <span className="mbiotraders-recent-count">
+                {displayedHistory.from}–{displayedHistory.to} of {displayedHistory.total}
+              </span>
+              <div className="mbiotraders-recent-page-controls">
+                <button
+                  type="button"
+                  onClick={() => setRecentPage(displayedHistory.page - 1)}
+                  disabled={displayedHistory.page === 0}
+                  aria-label="Previous signals page"
+                >
+                  Previous
+                </button>
+                <span>Page {displayedHistory.page + 1} of {displayedHistory.pageCount}</span>
+                <button
+                  type="button"
+                  onClick={() => setRecentPage(displayedHistory.page + 1)}
+                  disabled={displayedHistory.page + 1 >= displayedHistory.pageCount}
+                  aria-label="Next signals page"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </section>
 
           <section className="mbiotraders-card mbiotraders-stats-card">
-            <div className="mbiotraders-card-head"><h2>Market Statistics <small>(Up to 50 Signals)</small></h2></div>
+            <div className="mbiotraders-card-head"><h2>Market Statistics <small>(Last 100 Signals)</small></h2></div>
             <StatsCard signals={recentForStats} />
           </section>
         </section>}

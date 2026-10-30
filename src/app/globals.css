@@ -1525,3 +1525,113 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
     align-items: flex-start;
   }
 }
+
+.mbiotraders-recent-head {
+  gap: 8px;
+}
+
+.mbiotraders-export-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #1c7a63;
+  border-radius: 7px;
+  background: rgba(21, 101, 79, 0.22);
+  color: #72edbd;
+  padding: 6px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mbiotraders-export-button:hover:not(:disabled) {
+  background: rgba(31, 121, 90, 0.34);
+}
+
+.mbiotraders-export-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.mbiotraders-recent-card .mbiotraders-table-head,
+.mbiotraders-recent-card .mbiotraders-table-row {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.8fr) minmax(0, 0.95fr) minmax(0, 1fr);
+  gap: 7px;
+}
+
+.mbiotraders-recent-card .mbiotraders-table-row {
+  min-height: 34px;
+  line-height: 1.3;
+}
+
+.mbiotraders-signal-pair {
+  color: #c7d9dd;
+  font-weight: 700;
+}
+
+.mbiotraders-recent-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid #153342;
+  padding: 8px 12px 10px;
+  font-size: 10px;
+  color: #91adb4;
+}
+
+.mbiotraders-recent-page-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mbiotraders-recent-page-controls button {
+  border: 1px solid #214454;
+  border-radius: 7px;
+  padding: 6px 9px;
+  background: #0a2432;
+  color: #cfdfdf;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.mbiotraders-recent-page-controls button:hover:not(:disabled) {
+  border-color: #2b9678;
+  color: #7af0bc;
+}
+
+.mbiotraders-recent-page-controls button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+@media (max-width: 760px) {
+  .mbiotraders-recent-card .mbiotraders-table-head,
+  .mbiotraders-recent-card .mbiotraders-table-row {
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 0.8fr) minmax(0, 0.95fr) minmax(0, 0.95fr);
+  }
+
+  .mbiotraders-recent-card .mbiotraders-table-head span:nth-child(n+4),
+  .mbiotraders-recent-card .mbiotraders-table-row span:nth-child(n+4) {
+    display: block;
+  }
+}
+
+@media (max-width: 370px) {
+  .mbiotraders-recent-pagination {
+    justify-content: center;
+  }
+
+  .mbiotraders-recent-card .mbiotraders-table-head,
+  .mbiotraders-recent-card .mbiotraders-table-row {
+    gap: 4px;
+    font-size: 9px;
+  }
+
+  .mbiotraders-recent-page-controls {
+    gap: 4px;
+  }
+}

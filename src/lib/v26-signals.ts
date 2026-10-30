@@ -1,4 +1,5 @@
 import { atr } from "./indicators.ts";
+import { retainRecentSignals } from "./signal-history.ts";
 import type { Candle } from "./types.ts";
 import type { MarketSymbol } from "./v22/market.ts";
 
@@ -97,8 +98,7 @@ export function parseLedger(raw: string | null): Ledger {
         .filter(
           (value: unknown) =>
             valid(value) && value.symbol === market && value.status !== "ACTIVE",
-        )
-        .slice(-50);
+        );
       result.seen[market] = (
         Array.isArray(data.seen?.[market]) ? data.seen[market] : []
       )
@@ -117,6 +117,7 @@ export function parseLedger(raw: string | null): Ledger {
         result.pending[market] = pending;
       }
     }
+    result.history = retainRecentSignals(result.history);
     return result;
   } catch {
     return emptyLedger();
@@ -409,9 +410,9 @@ export function update(
   return {
     ...ledger,
     active: { ...ledger.active, [symbol]: undefined },
-    history: {
+    history: retainRecentSignals({
       ...ledger.history,
-      [symbol]: [...(ledger.history[symbol] ?? []), next].slice(-50),
-    },
+      [symbol]: [...(ledger.history[symbol] ?? []), next],
+    }),
   };
 }

@@ -63,7 +63,6 @@ test("application source, scripts, styles, tests and generated types contain no 
     ...sourceFiles("tests"),
     "next.config.ts",
     "postcss.config.mjs",
-    "next-env.d.ts",
     ".gitignore",
     ".prettierignore",
   ];

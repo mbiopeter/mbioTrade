@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Candle } from "@/lib/types";
+import { recentSignals } from "@/lib/signal-history";
 import type { Setup } from "@/lib/v22/analysis";
 import type { MarketPayload, MarketSymbol } from "@/lib/v22/market";
 import {
@@ -204,6 +205,7 @@ export function useSignalLedger({
     active,
     pending: ledger.pending[symbol] ?? null,
     history: [...(ledger.history[symbol] ?? [])].reverse(),
+    historyAll: recentSignals(ledger.history),
     warning,
     ready,
   };
