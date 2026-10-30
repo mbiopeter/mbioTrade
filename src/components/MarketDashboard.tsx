@@ -308,7 +308,7 @@ function useMarket(symbol: MarketSymbol) {
           const epoch = Number(value.tick.epoch);
           if (!Number.isFinite(quote) || quote <= 0 || !Number.isFinite(epoch) || Math.abs(Date.now() / 1000 - epoch) > 120) return;
           lastTick = Date.now();
-          attempts = 0; // Reset after actual data, not just the socket opening.
+          attempts = 0;
           if (firstTickTimeout !== null) { clearTimeout(firstTickTimeout); firstTickTimeout = null; }
           setFeed((state) => state.payload?.symbol === symbol
             ? { ...state, quote, quoteAt: epoch * 1000, streaming: true, streamRetrying: false }
@@ -362,8 +362,7 @@ function FrameTile({
     <button
       type="button"
       onClick={onClick}
-      className={`mbiotraders-frame-tile ${statusClass(effective)} ${active ? "selected" : ""}`}
-    >
+      className={`mbiotraders-frame-tile ${statusClass(effective)} ${active ? "selected" : ""}`}>
       <span className="mbiotraders-frame-time">{analysis.label}</span>
       <span className="mbiotraders-frame-dir">
         {effective === "BUY" ? (
@@ -708,8 +707,7 @@ export function MarketDashboard() {
             href="https://mbiopeter.co.ke"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Open the mbioPeter portfolio"
-          >
+            aria-label="Open the mbioPeter portfolio">
             <span className="mbiotraders-brand-icon" aria-hidden="true">
               <ChartNoAxesCombined size={23} strokeWidth={2.3} />
             </span>
@@ -746,8 +744,7 @@ export function MarketDashboard() {
               type="button"
               className={`mbiotraders-alert-button ${audible ? "on" : ""}`}
               onClick={() => void enableAlert()}
-              aria-pressed={audible}
-            >
+              aria-pressed={audible}>
               {audible ? <Volume2 size={17} /> : <BellOff size={17} />}
               Alerts {audible ? "On" : "Off"}
             </button>
@@ -764,8 +761,7 @@ export function MarketDashboard() {
                   type="button"
                   className={`mbiotraders-symbol-tab ${symbol === item.symbol ? "active" : ""}`}
                   onClick={() => setSymbol(item.symbol)}
-                  aria-pressed={symbol === item.symbol}
-                >
+                  aria-pressed={symbol === item.symbol}>
                   {item.symbol === "XAUUSD" ? (
                     <span className="mbiotraders-gold-mark">◆</span>
                   ) : (
@@ -790,8 +786,7 @@ export function MarketDashboard() {
                   type="button"
                   className={`mbiotraders-timeframe-tab ${frame === item ? "active" : ""}`}
                   onClick={() => setFrame(item)}
-                  aria-pressed={frame === item}
-                >
+                  aria-pressed={frame === item}>
                   {FRAME_LABELS[item]}
                 </button>
               ))}
@@ -902,8 +897,7 @@ export function MarketDashboard() {
                     type="button"
                     className={safeMomentumDays === days ? "active" : ""}
                     onClick={() => setMomentumDays(days)}
-                    aria-pressed={safeMomentumDays === days}
-                  >
+                    aria-pressed={safeMomentumDays === days}>
                     {days}D
                   </button>
                 ))}
@@ -1002,8 +996,7 @@ export function MarketDashboard() {
                 onClick={downloadSignals}
                 disabled={!latestSignals.length}
                 title="Export all stored signals as CSV"
-                aria-label="Export all recent signals as CSV"
-              >
+                aria-label="Export all recent signals as CSV">
                 <Download size={14} aria-hidden="true" /> Export CSV
               </button>
             </div>
@@ -1038,8 +1031,7 @@ export function MarketDashboard() {
                   type="button"
                   onClick={() => setRecentPage(displayedHistory.page - 1)}
                   disabled={displayedHistory.page === 0}
-                  aria-label="Previous signals page"
-                >
+                  aria-label="Previous signals page">
                   Previous
                 </button>
                 <span>Page {displayedHistory.page + 1} of {displayedHistory.pageCount}</span>
@@ -1047,8 +1039,7 @@ export function MarketDashboard() {
                   type="button"
                   onClick={() => setRecentPage(displayedHistory.page + 1)}
                   disabled={displayedHistory.page + 1 >= displayedHistory.pageCount}
-                  aria-label="Next signals page"
-                >
+                  aria-label="Next signals page">
                   Next
                 </button>
               </div>
