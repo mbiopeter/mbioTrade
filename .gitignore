@@ -6,7 +6,6 @@ node_modules
 *.log
 .DS_Store
 
-# Do not commit personal data, credentials, or old v17 SQLite files
 .env.server
 *.sqlite
 *.sqlite-shm

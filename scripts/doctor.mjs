@@ -6,6 +6,7 @@ const necessary = [
   'src/app/page.tsx', 'src/app/error.tsx', 'src/app/layout.tsx',
   'src/app/globals.css', 'src/app/api/market/route.ts',
   'src/components/LiveChart.tsx', 'src/components/MarketDashboard.tsx',
+  'src/components/ConnectionRetryToast.tsx',
   'src/lib/v22/market.ts', 'src/lib/v22/analysis.ts',
   'src/lib/v231/momentum.ts', 'src/lib/v231/gauge.ts',
   'src/lib/v26-signals.ts', 'src/lib/v26-history.ts', 'src/components/useSignalLedger.ts', 'src/components/useHistoricalCandles.ts', 'src/app/api/market/history/route.ts', 'next.config.ts',

@@ -7,8 +7,8 @@ import { reconnectionDelay, HTTP_REFRESH_MS, HTTP_TIMEOUT_MS, STREAM_FIRST_TICK_
 const root = resolve(import.meta.dirname, '..');
 const read = file => readFileSync(resolve(root, file), 'utf8');
 
-// Regression: both transport paths must retry indefinitely, including an
-// opening WebSocket that receives no actual market ticks.
+
+
 test('reconnection backoff starts quickly, grows and has a safe cap', () => {
   assert.equal(reconnectionDelay(1, 0.5), 2_000);
   assert.equal(reconnectionDelay(2, 0.5), 4_000);
@@ -35,8 +35,8 @@ test('failed HTTP requests retry automatically and do not discard verified earli
   assert.match(dashboard, /window\.addEventListener\("online", restore\)/);
   assert.match(dashboard, /document\.addEventListener\("visibilitychange", onVisible\)/);
   assert.match(dashboard, /abort\.current\?\.abort\(\)/);
-  assert.match(dashboard, /!feed\.error && Boolean\(feed\.payload\)/);
-  assert.match(dashboard, /const displayedSignal = activeSignal\?\.direction\?\?"WAIT"/);
+  assert.match(dashboard, /!feed\.error\s*&&\s*Boolean\(feed\.payload\)/);
+  assert.match(dashboard, /const displayedSignal = activeSignal\?\.direction\s*\?\?\s*"WAIT"/);
 });
 
 test('public streaming feed retries failed subscription and stalls', () => {

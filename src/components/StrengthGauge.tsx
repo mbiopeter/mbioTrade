@@ -3,9 +3,9 @@
 import dynamic from "next/dynamic";
 import type { FrameAnalysis } from "@/lib/v22/analysis";
 
-// Third-party maintained gauge: pointer, colored arcs, and animation are
-// implemented by react-gauge-component, not by bespoke SVG path code.
-// The library uses SVG browser measurements; disable server rendering.
+
+
+
 const GaugeComponent = dynamic(() => import("react-gauge-component"), {
   ssr: false,
   loading: () => <div className="mbiotraders-gauge-skeleton" role="status" aria-label="Loading market strength gauge" />,

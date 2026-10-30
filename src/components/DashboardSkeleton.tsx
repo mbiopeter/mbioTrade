@@ -1,4 +1,4 @@
-/** Full-card skeletons preserve the final nine-panel grid and prevent jumps. */
+
 import type { ReactNode } from "react";
 
 function Stripe({ width = "100%", height = 12, className = "" }: { width?: string; height?: number; className?: string }) {

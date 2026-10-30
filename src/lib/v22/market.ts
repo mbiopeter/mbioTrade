@@ -1,6 +1,6 @@
 import type { Candle } from "../types.ts";
 
-/** All prices are provider-supplied, never fabricated or imputed. */
+
 export const INSTRUMENTS = [
   { symbol: "XAUUSD", label: "Gold", sub: "XAU / USD", deriv: "frxXAUUSD", twelve: "XAU/USD", precision: 2 },
   { symbol: "EURUSD", label: "EUR/USD", sub: "Euro / Dollar", deriv: "frxEURUSD", twelve: "EUR/USD", precision: 5 },
@@ -46,7 +46,7 @@ export function parseCandles(rows: unknown, frame: Frame, timeKey: "epoch" | "da
     const time = timeKey === "epoch" ? num(r.epoch) :
       typeof r.datetime === "string" ? Math.floor(Date.parse(r.datetime.replace(" ","T") + (/[Z+]/.test(r.datetime) ? "" : "Z")) / 1000) : NaN;
     const [open,high,low,close] = [num(r.open),num(r.high),num(r.low),num(r.close)];
-    // Reject non-aligned bars rather than rounding them into false timestamps.
+
     if (!Number.isSafeInteger(time) || time < 0 || time % frame !== 0 || seen.has(time) ||
       ![open,high,low,close].every(v => Number.isFinite(v) && v > 0) ||
       low > Math.min(open,close) || high < Math.max(open,close) || high < low) continue;
@@ -63,7 +63,7 @@ function validateFrames(frames: FrameSeries): void {
     throw new Error(`Missing ${FRAME_LABELS[frame]} timeframe; full alignment cannot be checked`);
 }
 
-/** Optional preferred provider. API key only in the server environment, never in browser JS. */
+
 export async function fetchTwelveData(symbol: MarketSymbol, key: string, fetcher: typeof fetch = fetch): Promise<MarketPayload> {
   const instrument = resolveSymbol(symbol)!;
   const intervals: Record<Frame,string> = {300:"5min",900:"15min",1800:"30min",3600:"1h",14400:"4h",86400:"1day"};
@@ -75,7 +75,7 @@ export async function fetchTwelveData(symbol: MarketSymbol, key: string, fetcher
     url.searchParams.set("outputsize","260");
     url.searchParams.set("timezone","UTC");
     url.searchParams.set("apikey",key);
-    // No shared caching with credentials; do not log the URL, key, or upstream body.
+
     const response = await fetcher(url.toString(), {cache:"no-store",signal:AbortSignal.timeout(10_000)});
     if (!response.ok) throw new Error(`Twelve Data HTTP ${response.status}`);
     const payload = await response.json() as {values?:unknown; status?:string; code?:number; message?:string};
@@ -98,7 +98,7 @@ type WebSocketLike = {
 };
 type SocketFactory = (url:string)=>WebSocketLike;
 
-/** One no-auth public connection requests six exact granularities, matching req_id. */
+
 export async function fetchDeriv(symbol: MarketSymbol, socketFactory?: SocketFactory): Promise<MarketPayload> {
   const instrument = resolveSymbol(symbol)!;
   const factory = socketFactory ?? ((url:string)=> new WebSocket(url) as unknown as WebSocketLike);
@@ -114,7 +114,7 @@ export async function fetchDeriv(symbol: MarketSymbol, socketFactory?: SocketFac
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      try {socket?.close();} catch { /* closed */ }
+      try {socket?.close();} catch {  }
       error ? reject(error) : resolve();
     }
     try {socket = factory(url);} catch(e) {finish(e instanceof Error?e:new Error("WebSocket unavailable"));return;}
@@ -141,7 +141,7 @@ export async function fetchDeriv(symbol: MarketSymbol, socketFactory?: SocketFac
         if(count===FRAMES.length) {
           try {validateFrames(frames);finish();} catch(e) {finish(e as Error);}
         }
-      } catch {/* Ignore unexpected/unrelated messages. */}
+      } catch {}
     });
     socket.addEventListener("error",()=>finish(new Error("Public market socket connection failed")));
     socket.addEventListener("close",()=>{if (!settled)finish(new Error("Market-data socket closed before replies"));});
@@ -153,7 +153,7 @@ export async function fetchDeriv(symbol: MarketSymbol, socketFactory?: SocketFac
   };
 }
 
-/** Never mix providers within a signal; use Deriv only if Twelve Data is unavailable. */
+
 export async function fetchMarket(symbol: MarketSymbol, key = process.env.TWELVE_DATA_API_KEY ?? ""): Promise<MarketPayload> {
   if (key.trim()) {
     try {return await fetchTwelveData(symbol,key.trim());}

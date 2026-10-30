@@ -1,34 +1,417 @@
-import {atr} from './indicators.ts';
-import type {Candle} from './types.ts';
-import type {MarketSymbol} from './v22/market.ts';
-export type Direction='BUY'|'SELL';
-export type TrackedSignal={id:string;symbol:MarketSymbol;provider:'deriv'|'twelvedata';direction:Direction;entry:number;stop:number;target:number;openedAt:number;confidence:number;status:'ACTIVE'|'SL'|'TP';lastCheckedAt:number;closedAt:number|null;exitPrice:number|null;resultR:number|null};
-export type Pending={id:string;symbol:MarketSymbol;direction:Direction;level:number;createdAt:number;confidence:number};
-export type Ledger={version:26;active:Partial<Record<MarketSymbol,TrackedSignal>>;pending:Partial<Record<MarketSymbol,Pending>>;history:Partial<Record<MarketSymbol,TrackedSignal[]>>;seen:Partial<Record<MarketSymbol,string[]>>};
-export const LEDGER_KEY='mbiotraders-signals-v26';export const emptyLedger=():Ledger=>({version:26,active:{},pending:{},history:{},seen:{}});
-const markets=['XAUUSD','EURUSD','GBPUSD','USDJPY','AUDUSD','USDCAD'] as const;
-const valid=(x:any):x is TrackedSignal=>!!x&&typeof x.id==='string'&&markets.includes(x.symbol)&&['deriv','twelvedata'].includes(x.provider)&&['BUY','SELL'].includes(x.direction)&&['ACTIVE','SL','TP'].includes(x.status)&&[x.entry,x.stop,x.target].every((n:number)=>Number.isFinite(n)&&n>0)&&Number.isSafeInteger(x.openedAt)&&Number.isSafeInteger(x.lastCheckedAt)&&(x.direction==='BUY'?x.stop<x.entry&&x.entry<x.target:x.target<x.entry&&x.entry<x.stop);
-export function parseLedger(raw:string|null):Ledger{try{const data=JSON.parse(raw??'null');if(data?.version!==26)return emptyLedger();const out=emptyLedger();for(const market of markets){const active=data.active?.[market];if(valid(active)&&active.status==='ACTIVE')out.active[market]=active;out.history[market]=(Array.isArray(data.history?.[market])?data.history[market]:[]).filter((x:any)=>valid(x)&&x.symbol===market&&x.status!=='ACTIVE').slice(-50);out.seen[market]=(Array.isArray(data.seen?.[market])?data.seen[market]:[]).filter((x:any)=>typeof x==='string').slice(-100);const p=data.pending?.[market];if(p&&typeof p.id==='string'&&p.symbol===market&&['BUY','SELL'].includes(p.direction)&&Number.isFinite(p.level)&&Number.isFinite(p.createdAt))out.pending[market]=p;}return out;}catch{return emptyLedger();}}
-export const seen=(b:Ledger,s:MarketSymbol,id:string)=>(b.seen[s]??[]).includes(id)||b.active[s]?.id===id||(b.history[s]??[]).some(x=>x.id===id)||b.pending[s]?.id===id;
-const remember=(b:Ledger,s:MarketSymbol,id:string)=>[...new Set([...(b.seen[s]??[]),id])].slice(-100);
-export function activate(b:Ledger,p:TrackedSignal):Ledger{if(b.active[p.symbol]||seen(b,p.symbol,p.id))return b;return {...b,active:{...b.active,[p.symbol]:p},pending:{...b.pending,[p.symbol]:undefined},seen:{...b.seen,[p.symbol]:remember(b,p.symbol,p.id)}};}
-export function setPending(b:Ledger,p:Pending):Ledger{if(b.active[p.symbol]||seen(b,p.symbol,p.id))return b;return {...b,pending:{...b.pending,[p.symbol]:p},seen:{...b.seen,[p.symbol]:remember(b,p.symbol,p.id)}};}
-export function closePending(b:Ledger,s:MarketSymbol):Ledger{return b.pending[s]?{...b,pending:{...b.pending,[s]:undefined}}:b;}
-export function plan(args:{id:string;symbol:MarketSymbol;provider:'deriv'|'twelvedata';direction:Direction;entry:number;openedAt:number;confidence:number;five:Candle[];fifteen:Candle[];hourly:Candle[]}):TrackedSignal|null{
- const {id,symbol,provider,direction,entry,openedAt,confidence}=args;const subset=(rows:Candle[],tf:number)=>rows.filter(c=>(c.time+tf)*1000<=openedAt);
- const five=subset(args.five,300),fifteen=subset(args.fifteen,900),hourly=subset(args.hourly,3600);if(five.length<35||fifteen.length<25||hourly.length<25||entry<=0)return null;
- const a5=atr(five.slice(-60),14).at(-1)??NaN,a15=atr(fifteen.slice(-50),14).at(-1)??NaN,a1=atr(hourly.slice(-50),14).at(-1)??NaN;
- if(![a5,a15,a1].every(n=>Number.isFinite(n)&&n>0))return null;
- const extreme=direction==='BUY'?Math.min(...five.slice(-20).map(b=>b.low)):Math.max(...five.slice(-20).map(b=>b.high));
- const swing=direction==='BUY'?entry-extreme+.35*a5:extreme-entry+.35*a5;
- const distance=Math.max(swing,2.6*a5,1.4*a15,.55*a1);
- if(!Number.isFinite(distance)||distance<=0||distance>2*a1)return null;
- const sign=direction==='BUY'?1:-1,stop=entry-sign*distance,target=entry+sign*distance*2;
- if(stop<=0||target<=0)return null;
- return {id,symbol,provider,direction,entry,stop,target,openedAt,confidence,status:'ACTIVE',lastCheckedAt:openedAt,closedAt:null,exitPrice:null,resultR:null};
+import { atr } from "./indicators.ts";
+import type { Candle } from "./types.ts";
+import type { MarketSymbol } from "./v22/market.ts";
+
+export type Direction = "BUY" | "SELL";
+export type TrackedSignal = {
+  id: string;
+  symbol: MarketSymbol;
+  provider: "deriv" | "twelvedata";
+  direction: Direction;
+  entry: number;
+  stop: number;
+  target: number;
+  openedAt: number;
+  confidence: number;
+  status: "ACTIVE" | "SL" | "TP";
+  lastCheckedAt: number;
+  closedAt: number | null;
+  exitPrice: number | null;
+  resultR: number | null;
+};
+export type Pending = {
+  id: string;
+  symbol: MarketSymbol;
+  direction: Direction;
+  level: number;
+  createdAt: number;
+  confidence: number;
+};
+export type Ledger = {
+  version: 26;
+  active: Partial<Record<MarketSymbol, TrackedSignal>>;
+  pending: Partial<Record<MarketSymbol, Pending>>;
+  history: Partial<Record<MarketSymbol, TrackedSignal[]>>;
+  seen: Partial<Record<MarketSymbol, string[]>>;
+};
+
+
+export const LEDGER_KEY = "mbiotraders-signals-v26";
+export const emptyLedger = (): Ledger => ({
+  version: 26,
+  active: {},
+  pending: {},
+  history: {},
+  seen: {},
+});
+
+const markets = [
+  "XAUUSD",
+  "EURUSD",
+  "GBPUSD",
+  "USDJPY",
+  "AUDUSD",
+  "USDCAD",
+] as const;
+
+function valid(value: unknown): value is TrackedSignal {
+  if (!value || typeof value !== "object") return false;
+  const signal = value as Partial<TrackedSignal>;
+  const validPrices = [signal.entry, signal.stop, signal.target].every(
+    (number) => typeof number === "number" && Number.isFinite(number) && number > 0,
+  );
+  const validDirection = signal.direction === "BUY" || signal.direction === "SELL";
+  const orderedPrices =
+    validPrices &&
+    (signal.direction === "BUY"
+      ? signal.stop! < signal.entry! && signal.entry! < signal.target!
+      : signal.target! < signal.entry! && signal.entry! < signal.stop!);
+
+  return (
+    typeof signal.id === "string" &&
+    markets.includes(signal.symbol as MarketSymbol) &&
+    (signal.provider === "deriv" || signal.provider === "twelvedata") &&
+    validDirection &&
+    ["ACTIVE", "SL", "TP"].includes(signal.status ?? "") &&
+    Number.isSafeInteger(signal.openedAt) &&
+    Number.isSafeInteger(signal.lastCheckedAt) &&
+    orderedPrices
+  );
 }
-export function oppositeLevel(rows:Candle[],direction:Direction,at:number){const bars=rows.filter(b=>(b.time+300)*1000<at).slice(-72);return bars.length<24?null:direction==='BUY'?Math.max(...bars.map(b=>b.high)):Math.min(...bars.map(b=>b.low));}
-export function nearbyBarrier(rows:Candle[],direction:Direction,entry:number,at:number){const level=oppositeLevel(rows,direction,at);const a=atr(rows.filter(b=>(b.time+300)*1000<=at).slice(-55),14).at(-1)??0;if(level===null||a<=0)return null;const gap=direction==='BUY'?level-entry:entry-level;return gap>=-.18*a&&gap<=1.25*a?level:null;}
-export function confirmedBreakout(p:Pending,rows:Candle[],at:number){if(at-p.createdAt>6*3600000)return null;const bars=rows.filter(b=>(b.time+300)*1000<=at&&(b.time+300)*1000>p.createdAt);if(bars.length<2)return null;const [a,b]=bars.slice(-2);if(b.time-a.time!==300)return null;const range=atr(rows.filter(x=>(x.time+300)*1000<=at).slice(-55),14).at(-1)??0;if(range<=0)return null;const beyond=(n:number)=>p.direction==='BUY'?n>p.level+.18*range:n<p.level-.18*range;return beyond(a.close)&&beyond(b.close)?(b.time+300)*1000:null;}
-export function reconcile(s:TrackedSignal,rows:Candle[],at:number){if(s.status!=='ACTIVE')return {signal:s,blocked:false,reason:null};const ordered=rows.filter(c=>(c.time+300)*1000<=at&&(c.time+300)*1000>s.lastCheckedAt).sort((a,b)=>a.time-b.time);let cursor=s.lastCheckedAt;for(const bar of ordered){if(bar.time*1000<cursor)continue;if(bar.time*1000>cursor)return{signal:cursor!==s.lastCheckedAt?{...s,lastCheckedAt:cursor}:s,blocked:true,reason:'Missing real 5-minute candles; signal kept active until history is complete.'};const sign=s.direction==='BUY'?1:-1;const sl=sign===1?bar.low<=s.stop:bar.high>=s.stop,tp=sign===1?bar.high>=s.target:bar.low<=s.target;cursor=(bar.time+300)*1000;if(sl||tp){const gap=sign*(bar.open-s.stop)<=0;const exit=sl?(gap?bar.open:s.stop):s.target;return{signal:{...s,status:sl?'SL' as const:'TP' as const,closedAt:cursor,exitPrice:exit,lastCheckedAt:cursor,resultR:sign*(exit-s.entry)/Math.abs(s.entry-s.stop)},blocked:false,reason:null};}}return{signal:cursor!==s.lastCheckedAt?{...s,lastCheckedAt:cursor}:s,blocked:false,reason:null};}
-export function update(b:Ledger,s:MarketSymbol,next:TrackedSignal):Ledger{const prev=b.active[s];if(!prev||prev.id!==next.id||(prev.status===next.status&&prev.lastCheckedAt===next.lastCheckedAt))return b;if(next.status==='ACTIVE')return{...b,active:{...b.active,[s]:next}};return{...b,active:{...b.active,[s]:undefined},history:{...b.history,[s]:[...(b.history[s]??[]),next].slice(-50)}};}
+
+
+export function parseLedger(raw: string | null): Ledger {
+  try {
+    const data = JSON.parse(raw ?? "null");
+    if (data?.version !== 26) return emptyLedger();
+
+    const result = emptyLedger();
+    for (const market of markets) {
+      const active = data.active?.[market];
+      if (valid(active) && active.status === "ACTIVE") {
+        result.active[market] = active;
+      }
+      result.history[market] = (
+        Array.isArray(data.history?.[market]) ? data.history[market] : []
+      )
+        .filter(
+          (value: unknown) =>
+            valid(value) && value.symbol === market && value.status !== "ACTIVE",
+        )
+        .slice(-50);
+      result.seen[market] = (
+        Array.isArray(data.seen?.[market]) ? data.seen[market] : []
+      )
+        .filter((value: unknown): value is string => typeof value === "string")
+        .slice(-100);
+
+      const pending = data.pending?.[market];
+      if (
+        pending &&
+        typeof pending.id === "string" &&
+        pending.symbol === market &&
+        ["BUY", "SELL"].includes(pending.direction) &&
+        Number.isFinite(pending.level) &&
+        Number.isFinite(pending.createdAt)
+      ) {
+        result.pending[market] = pending;
+      }
+    }
+    return result;
+  } catch {
+    return emptyLedger();
+  }
+}
+
+export function seen(book: Ledger, symbol: MarketSymbol, id: string) {
+  return (
+    (book.seen[symbol] ?? []).includes(id) ||
+    book.active[symbol]?.id === id ||
+    (book.history[symbol] ?? []).some((item) => item.id === id) ||
+    book.pending[symbol]?.id === id
+  );
+}
+
+function remember(book: Ledger, symbol: MarketSymbol, id: string) {
+  return [...new Set([...(book.seen[symbol] ?? []), id])].slice(-100);
+}
+
+export function activate(book: Ledger, signal: TrackedSignal): Ledger {
+  if (book.active[signal.symbol] || seen(book, signal.symbol, signal.id)) {
+    return book;
+  }
+  return {
+    ...book,
+    active: { ...book.active, [signal.symbol]: signal },
+    pending: { ...book.pending, [signal.symbol]: undefined },
+    seen: {
+      ...book.seen,
+      [signal.symbol]: remember(book, signal.symbol, signal.id),
+    },
+  };
+}
+
+export function setPending(book: Ledger, pending: Pending): Ledger {
+  if (book.active[pending.symbol] || seen(book, pending.symbol, pending.id)) {
+    return book;
+  }
+  return {
+    ...book,
+    pending: { ...book.pending, [pending.symbol]: pending },
+    seen: {
+      ...book.seen,
+      [pending.symbol]: remember(book, pending.symbol, pending.id),
+    },
+  };
+}
+
+export function closePending(book: Ledger, symbol: MarketSymbol): Ledger {
+  return book.pending[symbol]
+    ? { ...book, pending: { ...book.pending, [symbol]: undefined } }
+    : book;
+}
+
+type PlanOptions = {
+  id: string;
+  symbol: MarketSymbol;
+  provider: "deriv" | "twelvedata";
+  direction: Direction;
+  entry: number;
+  openedAt: number;
+  confidence: number;
+  five: Candle[];
+  fifteen: Candle[];
+  hourly: Candle[];
+};
+
+
+export function plan(args: PlanOptions): TrackedSignal | null {
+  const { id, symbol, provider, direction, entry, openedAt, confidence } = args;
+  const completed = (bars: Candle[], timeframe: number) =>
+    bars.filter((bar) => (bar.time + timeframe) * 1000 <= openedAt);
+
+  const five = completed(args.five, 300);
+  const fifteen = completed(args.fifteen, 900);
+  const hourly = completed(args.hourly, 3600);
+  if (
+    five.length < 35 ||
+    fifteen.length < 25 ||
+    hourly.length < 25 ||
+    entry <= 0
+  ) {
+    return null;
+  }
+
+  const atr5 = atr(five.slice(-60), 14).at(-1) ?? NaN;
+  const atr15 = atr(fifteen.slice(-50), 14).at(-1) ?? NaN;
+  const atrH1 = atr(hourly.slice(-50), 14).at(-1) ?? NaN;
+  if (![atr5, atr15, atrH1].every((value) => Number.isFinite(value) && value > 0)) {
+    return null;
+  }
+
+  const swingExtreme =
+    direction === "BUY"
+      ? Math.min(...five.slice(-20).map((bar) => bar.low))
+      : Math.max(...five.slice(-20).map((bar) => bar.high));
+  const swingDistance =
+    direction === "BUY"
+      ? entry - swingExtreme + 0.35 * atr5
+      : swingExtreme - entry + 0.35 * atr5;
+  const distance = Math.max(swingDistance, 2.6 * atr5, 1.4 * atr15, 0.55 * atrH1);
+
+  if (!Number.isFinite(distance) || distance <= 0 || distance > 2 * atrH1) {
+    return null;
+  }
+
+  const sign = direction === "BUY" ? 1 : -1;
+  const stop = entry - sign * distance;
+  const target = entry + sign * distance * 2;
+  if (stop <= 0 || target <= 0) return null;
+
+  return {
+    id,
+    symbol,
+    provider,
+    direction,
+    entry,
+    stop,
+    target,
+    openedAt,
+    confidence,
+    status: "ACTIVE",
+    lastCheckedAt: openedAt,
+    closedAt: null,
+    exitPrice: null,
+    resultR: null,
+  };
+}
+
+export function oppositeLevel(
+  bars: Candle[],
+  direction: Direction,
+  at: number,
+) {
+  const completed = bars
+    .filter((bar) => (bar.time + 300) * 1000 < at)
+    .slice(-72);
+  if (completed.length < 24) return null;
+  return direction === "BUY"
+    ? Math.max(...completed.map((bar) => bar.high))
+    : Math.min(...completed.map((bar) => bar.low));
+}
+
+export function nearbyBarrier(
+  bars: Candle[],
+  direction: Direction,
+  entry: number,
+  at: number,
+) {
+  const level = oppositeLevel(bars, direction, at);
+  const volatility =
+    atr(
+      bars.filter((bar) => (bar.time + 300) * 1000 <= at).slice(-55),
+      14,
+    ).at(-1) ?? 0;
+  if (level === null || volatility <= 0) return null;
+
+  const gap = direction === "BUY" ? level - entry : entry - level;
+  return gap >= -0.18 * volatility && gap <= 1.25 * volatility
+    ? level
+    : null;
+}
+
+export function confirmedBreakout(
+  pending: Pending,
+  bars: Candle[],
+  at: number,
+) {
+  if (at - pending.createdAt > 6 * 3_600_000) return null;
+  const completed = bars.filter(
+    (bar) =>
+      (bar.time + 300) * 1000 <= at &&
+      (bar.time + 300) * 1000 > pending.createdAt,
+  );
+  if (completed.length < 2) return null;
+
+  const [first, second] = completed.slice(-2);
+  if (second.time - first.time !== 300) return null;
+
+  const volatility =
+    atr(
+      bars.filter((bar) => (bar.time + 300) * 1000 <= at).slice(-55),
+      14,
+    ).at(-1) ?? 0;
+  if (volatility <= 0) return null;
+
+  const beyond = (close: number) =>
+    pending.direction === "BUY"
+      ? close > pending.level + 0.18 * volatility
+      : close < pending.level - 0.18 * volatility;
+
+  return beyond(first.close) && beyond(second.close)
+    ? (second.time + 300) * 1000
+    : null;
+}
+
+
+export function reconcile(signal: TrackedSignal, bars: Candle[], at: number) {
+  if (signal.status !== "ACTIVE") {
+    return { signal, blocked: false, reason: null };
+  }
+
+  const ordered = bars
+    .filter(
+      (bar) =>
+        (bar.time + 300) * 1000 <= at &&
+        (bar.time + 300) * 1000 > signal.lastCheckedAt,
+    )
+    .sort((first, second) => first.time - second.time);
+
+  let cursor = signal.lastCheckedAt;
+  for (const bar of ordered) {
+    if (bar.time * 1000 < cursor) continue;
+    if (bar.time * 1000 > cursor) {
+      return {
+        signal:
+          cursor !== signal.lastCheckedAt
+            ? { ...signal, lastCheckedAt: cursor }
+            : signal,
+        blocked: true,
+        reason: "Missing real 5-minute candles; signal kept active until history is complete.",
+      };
+    }
+
+    const sign = signal.direction === "BUY" ? 1 : -1;
+    const stopHit = sign === 1
+      ? bar.low <= signal.stop
+      : bar.high >= signal.stop;
+    const targetHit = sign === 1
+      ? bar.high >= signal.target
+      : bar.low <= signal.target;
+    cursor = (bar.time + 300) * 1000;
+
+    if (stopHit || targetHit) {
+      const gapStopped = sign * (bar.open - signal.stop) <= 0;
+      const exitPrice = stopHit
+        ? gapStopped
+          ? bar.open
+          : signal.stop
+        : signal.target;
+
+      return {
+        signal: {
+          ...signal,
+          status: (stopHit ? "SL" : "TP") as "SL" | "TP",
+          closedAt: cursor,
+          exitPrice,
+          lastCheckedAt: cursor,
+          resultR: (sign * (exitPrice - signal.entry)) /
+            Math.abs(signal.entry - signal.stop),
+        },
+        blocked: false,
+        reason: null,
+      };
+    }
+  }
+
+  return {
+    signal:
+      cursor !== signal.lastCheckedAt
+        ? { ...signal, lastCheckedAt: cursor }
+        : signal,
+    blocked: false,
+    reason: null,
+  };
+}
+
+export function update(
+  ledger: Ledger,
+  symbol: MarketSymbol,
+  next: TrackedSignal,
+): Ledger {
+  const previous = ledger.active[symbol];
+  if (
+    !previous ||
+    previous.id !== next.id ||
+    (previous.status === next.status &&
+      previous.lastCheckedAt === next.lastCheckedAt)
+  ) {
+    return ledger;
+  }
+
+  if (next.status === "ACTIVE") {
+    return {
+      ...ledger,
+      active: { ...ledger.active, [symbol]: next },
+    };
+  }
+
+  return {
+    ...ledger,
+    active: { ...ledger.active, [symbol]: undefined },
+    history: {
+      ...ledger.history,
+      [symbol]: [...(ledger.history[symbol] ?? []), next].slice(-50),
+    },
+  };
+}

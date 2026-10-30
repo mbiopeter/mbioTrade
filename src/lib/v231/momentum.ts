@@ -31,12 +31,12 @@ const EMPTY = (reason: string): MomentumReading => ({
   start: null, end: null, reason,
 });
 
-/**
- * Uses the same N fully closed D1 market sessions for each of H1/H4/D1.
- * Gaps between calendar dates (weekends/holidays) are allowed, but missing
- * intraday coverage within a selected actual trading session is not imputed.
- * This is price-direction momentum, not an estimate of win probability.
- */
+
+
+
+
+
+
 export function analyzeHigherMomentum(
   frames: FrameSeries,
   at = Date.now(),
@@ -78,7 +78,7 @@ export function analyzeHigherMomentum(
     const change = close - open;
     const changePct = open > 0 ? 100 * change / open : null;
     const closes = bars.map((bar) => bar.close);
-    // Unweighted ordinary-least-squares trend of actually observed bar closes.
+
     const midX = (closes.length - 1) / 2;
     const midY = closes.reduce((sum, n) => sum + n, 0) / closes.length;
     let numerator = 0;

@@ -59,8 +59,8 @@ test('SEO page and metadata routes exist, canonical configured safely', () => {
 test('invalid external canonical origins are ignored', () => {
   assert.equal(siteOrigin('https://example.com/campaign'), 'https://example.com');
   assert.equal(siteOrigin('http://localhost:3000'), 'http://localhost:3000');
-  assert.equal(siteOrigin('javascript:alert(1)'), 'https://mbiotrade.vercel.app');
-  assert.equal(siteOrigin('http://external.example'), 'https://mbiotrade.vercel.app');
+  assert.equal(siteOrigin('javascript:alert(1)'), 'https://traders.mbiopeter.co.ke');
+  assert.equal(siteOrigin('http://external.example'), 'https://traders.mbiopeter.co.ke');
 });
 
 test('no order execution or authenticated broker tokens introduced in signal-only release', () => {

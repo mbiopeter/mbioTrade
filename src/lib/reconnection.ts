@@ -1,6 +1,6 @@
-/** Shared retry pacing for market HTTP and public quote WebSockets.
- * A brief random spread prevents many dashboards from reconnecting at once.
- */
+
+
+
 export function reconnectionDelay(attempt: number, jitter = 0.5): number {
   const safeAttempt = Number.isFinite(attempt) ? Math.max(1, Math.floor(attempt)) : 1;
   const capped = Math.min(30_000, 2_000 * 2 ** Math.min(safeAttempt - 1, 5));

@@ -1,9 +1,9 @@
 "use client";
 
-/**
- * This error boundary must remain a Client Component in Next.js App Router.
- * The first directive is required by Next.js App Router (including in production).
- */
+
+
+
+
 export default function ErrorPage({
   reset,
 }: {

@@ -26,17 +26,17 @@ function voteOf(x:number, margin=0):Vote {return !Number.isFinite(x) || Math.abs
 function indicator(name:string,value:string,vote:Vote,description:string,group:"MA"|"indicator"="indicator"):IndicatorVote {
   return {name,value,vote,description,group};
 }
-/** Use completed OHLC only, not the unfinished latest candle or ticks. */
+
 export function completed(candles:Candle[],frame:Frame,at=Date.now()):Candle[] {
   return candles.filter(c=>Number.isSafeInteger(c.time) && (c.time+frame)*1000<=at);
 }
 
-/** The gauge is an indicator vote, NOT a statistically calibrated win probability. */
+
 export function evaluateFrame(input:Candle[],frame:Frame,at=Date.now()):FrameAnalysis {
   const candles=completed(input,frame,at);
   if(candles.length<205)return neutralFrame(frame);
   const age = at/1000 - (candles[candles.length-1].time+frame);
-  // Bar-by-bar alignment may not use an hour/day trend that is itself stale.
+  
   if(age<0 || age>Math.max(frame*3,1800))return neutralFrame(frame);
   const closes=candles.map(c=>c.close);
   const last=candles.at(-1)!;
@@ -89,11 +89,7 @@ export function evaluateFrame(input:Candle[],frame:Frame,at=Date.now()):FrameAna
     adx:Number.isFinite(dx.adx[i])?dx.adx[i]:null,rsi:Number.isFinite(r)?r:null};
 }
 
-/**
- * Intrabar estimate for the VISUAL gauge only. A streamed tick may alter a
- * developing indicator vote, but only evaluateFrame() on CLOSED bars may
- * qualify a trade signal. This method never fabricates historical bars.
- */
+
 export function evaluateLiveFrame(input:Candle[],frame:Frame,at:number,quote:number,quoteAt:number):FrameAnalysis {
   const closed = completed(input,frame,quoteAt);
   if (!Number.isFinite(quote) || quote<=0 || !Number.isFinite(quoteAt) ||
@@ -106,8 +102,8 @@ export function evaluateLiveFrame(input:Candle[],frame:Frame,at:number,quote:num
   const live: Candle=providerLive
     ? {...providerLive, high:Math.max(providerLive.high,quote), low:Math.min(providerLive.low,quote), close:quote}
     : {time:bucket,open:quote,high:quote,low:quote,close:quote};
-  // Treat ONLY the synthetic cutoff as closed to calculate a provisional
-  // display. The true trade-signal cutoff remains 'at' without this tick.
+
+
   return evaluateFrame([...closed,live],frame,(bucket+frame)*1000+1);
 }
 
@@ -116,7 +112,7 @@ function isContinuousTail(candles:Candle[],frame:Frame,at:number,number=6):boole
   return bars.length===number && bars.every((c,i)=>i===0||c.time-bars[i-1].time===frame);
 }
 
-/** The alert is only an entry plan when all six completed timeframes agree. */
+
 export function inspectConfluence(payload:Pick<MarketPayload,"symbol"|"frames">,at=Date.now(),days:MomentumDays=5):Setup {
   const frames={} as Record<Frame,FrameAnalysis>;
   for (const frame of FRAMES) frames[frame]=evaluateFrame(payload.frames[frame]??[],frame,at);
@@ -137,7 +133,7 @@ export function inspectConfluence(payload:Pick<MarketPayload,"symbol"|"frames">,
   const e9=closes.length?ema(closes,9).at(-1)??NaN:NaN;
   const vatr=five.length>20?atr(five.slice(-40),14).at(-1)??NaN:NaN;
   const validTail=isContinuousTail(payload.frames[300]??[],300,at);
-  // A brief counter-trend retracement, then an actual close through the prior bar's extreme.
+
   const pullback= Boolean(previous && five.slice(-5,-1).some(c=>sign*(c.close-c.open)<0));
   const reversed=Boolean(last && previous && sign!==0 && sign*(last.close-last.open)>0 &&
     sign*(last.close-(sign===1?previous.high:previous.low))>0 &&
@@ -146,7 +142,7 @@ export function inspectConfluence(payload:Pick<MarketPayload,"symbol"|"frames">,
     Number.isFinite(vatr) && last.high-last.low<=vatr*2.8);
   const htfStrength=frames[3600].adx!==null && frames[3600].adx!>=16;
   const agreement=FRAMES.filter(frame=>directionFor(frame)===bias && bias!=="NEUTRAL").length;
-  // Confluence score, not a historical probability of success.
+
   const agreementScore=agreement/6*55;
   const technical= (bias==="BUY"?1:bias==="SELL"?-1:0) * frames[300].score;
   const score=Math.round(Math.min(100,agreementScore+Math.max(0,technical)*.15+(htfStrength?10:0)+(pullback?10:0)+(reversed?10:0)));
@@ -187,7 +183,7 @@ export function inspectConfluence(payload:Pick<MarketPayload,"symbol"|"frames">,
 }
 
 export type ReplaySignal = {id:string;time:number;direction:"BUY"|"SELL";entry:number;stop:number;target:number;outcome:"TP"|"SL"|"TIME";r:number;exitTime:number};
-/** No lookahead: each signal sees only candles completed by its timestamp. */
+
 export function replayRecent(payload:Pick<MarketPayload,"symbol"|"frames">,max=5,days:MomentumDays=5):ReplaySignal[] {
   const five=payload.frames[300]??[];
   if(five.length<55)return [];
@@ -203,7 +199,7 @@ export function replayRecent(payload:Pick<MarketPayload,"symbol"|"frames">,max=5
     if(i+1>=five.length||five[i+1].time!==five[i].time+300)continue;
     const sign=signal.status==="BUY"?1:-1;
     const next=five[i+1];
-    // Paper fill at next completed bar open, not the just-closed signal price.
+
     const entry=next.open;
     const risk=Math.abs(signal.entry-signal.stop);
     if(risk<=0||Math.abs(entry-signal.entry)>risk*.5)continue;

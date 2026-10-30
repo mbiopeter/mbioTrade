@@ -1,8 +1,8 @@
 {
-  "name": "mbiotraders-v26",
-  "version": "26.0.0",
+  "name": "mbiotraders-v28",
+  "version": "28.0.0",
   "private": true,
-  "description": "mbioTraders v26: persistent broker-independent signals, wider stops, 90-day chart history and chart position zones",
+  "description": "mbioTraders v28: responsive mobile header, chart-attached long/short risk and reward zones without duplicate price lines, strict TypeScript fixes, and comment-free source.",
   "engines": {
     "node": ">=22.16.0"
   },

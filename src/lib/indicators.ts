@@ -93,9 +93,9 @@ export function lastFinite(values: number[], fallback = 0): number {
     return fallback;
 }
 
-/** Wilder's ADX(14) and directional indicators; does not use future candles.
- * The first reliable ADX appears at bar 2*period - 1. Values before that are NaN.
- */
+
+
+
 export function adx(candles: Candle[], period = 14): {
     adx: number[]; plusDI: number[]; minusDI: number[];
 } {

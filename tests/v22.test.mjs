@@ -80,7 +80,7 @@ test('BUY setup only after higher trend and 5m pullback confirmation',()=>{
   }
   const s=inspectConfluence({symbol:'XAUUSD',frames},anchor*1000);
   assert.equal(s.status,'BUY');assert.ok(s.signalId);assert.ok(s.entry<s.target);assert.ok(s.entry>s.stop);
-  // In-progress reversal cannot be used a minute before its 5m close.
+  
   const before=inspectConfluence({symbol:'XAUUSD',frames},(anchor-60)*1000);
   assert.equal(before.status,'WAIT');
 });

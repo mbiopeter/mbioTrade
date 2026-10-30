@@ -1,5 +1,5 @@
-/** Canonical public origin. Override when deploying to a different domain. */
-const FALLBACK = "https://mbiotrade.vercel.app";
+
+const FALLBACK = "https://traders.mbiopeter.co.ke";
 export const SITE_NAME = "mbioTraders";
 export const SITE_DESCRIPTION = "Live Gold and major Forex market signals with an animated strength gauge, multi-timeframe trend alignment, technical indicators and research-only signal plans.";
 
