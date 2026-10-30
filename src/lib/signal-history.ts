@@ -2,7 +2,7 @@ import type { TrackedSignal } from "./v26-signals.ts";
 import type { MarketSymbol } from "./v22/market.ts";
 
 export const RECENT_SIGNAL_LIMIT = 100;
-export const SIGNALS_PER_PAGE = 3;
+export const SIGNALS_PER_PAGE = 2;
 
 export type SignalHistory = Partial<Record<MarketSymbol, TrackedSignal[]>>;
 

@@ -9,6 +9,7 @@ import {
   ChartNoAxesCombined,
   Clock3,
   Download,
+  CalendarClock,
   ExternalLink,
   Info,
   RefreshCcw,
@@ -21,6 +22,8 @@ import { LiveChart } from "@/components/LiveChart";
 import { ConnectionRetryToast } from "@/components/ConnectionRetryToast";
 import { useHistoricalCandles } from "@/components/useHistoricalCandles";
 import { useSignalLedger } from "@/components/useSignalLedger";
+import { useNewsCalendar } from "@/components/useNewsCalendar";
+import { NEWS_SOURCE_URL } from "@/lib/news-calendar";
 import { LEDGER_KEY, parseLedger } from "@/lib/v26-signals";
 import {
   exportSignalsCsv,
@@ -308,7 +311,7 @@ function useMarket(symbol: MarketSymbol) {
           const epoch = Number(value.tick.epoch);
           if (!Number.isFinite(quote) || quote <= 0 || !Number.isFinite(epoch) || Math.abs(Date.now() / 1000 - epoch) > 120) return;
           lastTick = Date.now();
-          attempts = 0;
+          attempts = 0; // Reset after actual data, not just the socket opening.
           if (firstTickTimeout !== null) { clearTimeout(firstTickTimeout); firstTickTimeout = null; }
           setFeed((state) => state.payload?.symbol === symbol
             ? { ...state, quote, quoteAt: epoch * 1000, streaming: true, streamRetrying: false }
@@ -362,7 +365,8 @@ function FrameTile({
     <button
       type="button"
       onClick={onClick}
-      className={`mbiotraders-frame-tile ${statusClass(effective)} ${active ? "selected" : ""}`}>
+      className={`mbiotraders-frame-tile ${statusClass(effective)} ${active ? "selected" : ""}`}
+    >
       <span className="mbiotraders-frame-time">{analysis.label}</span>
       <span className="mbiotraders-frame-dir">
         {effective === "BUY" ? (
@@ -481,6 +485,7 @@ export function MarketDashboard() {
   const previousSignal = useRef<string | null>(null);
   const initialized = useRef(false);
   const { feed, reload } = useMarket(symbol);
+  const { guard: newsGuard } = useNewsCalendar(symbol, now);
 
   useEffect(() => {
     setNow(Date.now());
@@ -540,6 +545,7 @@ export function MarketDashboard() {
     bars15: payload.frames[900] ?? [],
     barsH1: payload.frames[3600] ?? [],
     historyLoading: frame === 300 ? chartHistory.loading : old5.loading,
+    allowNewSignals: newsGuard.allowed,
   });
   useEffect(() => {
     setNeedsOlder5(Boolean(tracker.active));
@@ -681,7 +687,9 @@ export function MarketDashboard() {
   const sourceMatches = !activeSignal || activeSignal.provider === payload.provider;
   const activeReason = activeSignal
     ? "Active paper signal — indicator changes cannot cancel it. Only verified TP/SL can close it."
-    : pendingSignal
+    : !newsGuard.allowed
+      ? newsGuard.reason
+      : pendingSignal
       ? `Awaiting two confirmed 5m closes beyond ${price(pendingSignal.level, 4)} (${pendingSignal.direction === "BUY" ? "resistance" : "support"}).`
       : setup.reason;
   const floatingReturn =
@@ -707,7 +715,8 @@ export function MarketDashboard() {
             href="https://mbiopeter.co.ke"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Open the mbioPeter portfolio">
+            aria-label="Open the mbioPeter portfolio"
+          >
             <span className="mbiotraders-brand-icon" aria-hidden="true">
               <ChartNoAxesCombined size={23} strokeWidth={2.3} />
             </span>
@@ -744,7 +753,8 @@ export function MarketDashboard() {
               type="button"
               className={`mbiotraders-alert-button ${audible ? "on" : ""}`}
               onClick={() => void enableAlert()}
-              aria-pressed={audible}>
+              aria-pressed={audible}
+            >
               {audible ? <Volume2 size={17} /> : <BellOff size={17} />}
               Alerts {audible ? "On" : "Off"}
             </button>
@@ -761,7 +771,8 @@ export function MarketDashboard() {
                   type="button"
                   className={`mbiotraders-symbol-tab ${symbol === item.symbol ? "active" : ""}`}
                   onClick={() => setSymbol(item.symbol)}
-                  aria-pressed={symbol === item.symbol}>
+                  aria-pressed={symbol === item.symbol}
+                >
                   {item.symbol === "XAUUSD" ? (
                     <span className="mbiotraders-gold-mark">◆</span>
                   ) : (
@@ -786,7 +797,8 @@ export function MarketDashboard() {
                   type="button"
                   className={`mbiotraders-timeframe-tab ${frame === item ? "active" : ""}`}
                   onClick={() => setFrame(item)}
-                  aria-pressed={frame === item}>
+                  aria-pressed={frame === item}
+                >
                   {FRAME_LABELS[item]}
                 </button>
               ))}
@@ -883,9 +895,36 @@ export function MarketDashboard() {
               ? tracker.warning
                 ? "TRACKING · Verification pending"
                 : "TRACKING until TP/SL"
-              : pendingSignal
-                ? "WAITING for level breakout"
-                : "WAITING for qualifying signal"}</div>
+              : !newsGuard.allowed
+                ? "NEW SIGNALS PAUSED · Economic news guard"
+                : pendingSignal
+                  ? "WAITING for level breakout"
+                  : "WAITING for qualifying signal"}</div>
+            <div className={`mbiotraders-news-guard ${newsGuard.state.toLowerCase()}`} role="status">
+              <div className="mbiotraders-news-guard-heading">
+                <CalendarClock size={14} aria-hidden="true" />
+                <strong>High-impact news filter</strong>
+                <span>{newsGuard.state === "CLEAR" ? "CLEAR" : newsGuard.state === "BLOCKED" ? "PAUSED" : "CHECKING"}</span>
+              </div>
+              <p>{newsGuard.reason}</p>
+              {newsGuard.state === "CLEAR" && newsGuard.next && (
+                <small>
+                  Next {newsGuard.next.country} event: {newsGuard.next.title} · {newsGuard.next.time === null
+                    ? "Time unconfirmed"
+                    : new Intl.DateTimeFormat("en-GB", {
+                        timeZone: "Africa/Nairobi",
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                      }).format(newsGuard.next.time) + " EAT"}
+                </small>
+              )}
+              <a href={NEWS_SOURCE_URL} target="_blank" rel="noopener noreferrer">
+                Calendar data: Finance Calendar <ExternalLink size={12} aria-hidden="true" />
+              </a>
+            </div>
           </section>
 
           <section className="mbiotraders-card mbiotraders-align-card">
@@ -897,7 +936,8 @@ export function MarketDashboard() {
                     type="button"
                     className={safeMomentumDays === days ? "active" : ""}
                     onClick={() => setMomentumDays(days)}
-                    aria-pressed={safeMomentumDays === days}>
+                    aria-pressed={safeMomentumDays === days}
+                  >
                     {days}D
                   </button>
                 ))}
@@ -953,6 +993,13 @@ export function MarketDashboard() {
                   </b>
                 </div>
               ))}
+              <div className="mbiotraders-check-item" title={newsGuard.reason}>
+                <span className={`mbiotraders-check-icon ${newsGuard.allowed ? "ok" : "pending"}`}>
+                  {newsGuard.allowed ? <Check size={13} /> : <Clock3 size={12} />}
+                </span>
+                <div className="mbiotraders-check-copy"><strong>High-impact news window</strong></div>
+                <b className={newsGuard.allowed ? "up" : "flat"}>{newsGuard.allowed ? "Clear" : "Wait"}</b>
+              </div>
             </div>
             <div className="mbiotraders-conclusion">Conclusion <span>{activeReason}</span></div>
           </section>
@@ -996,7 +1043,8 @@ export function MarketDashboard() {
                 onClick={downloadSignals}
                 disabled={!latestSignals.length}
                 title="Export all stored signals as CSV"
-                aria-label="Export all recent signals as CSV">
+                aria-label="Export all recent signals as CSV"
+              >
                 <Download size={14} aria-hidden="true" /> Export CSV
               </button>
             </div>
@@ -1031,7 +1079,8 @@ export function MarketDashboard() {
                   type="button"
                   onClick={() => setRecentPage(displayedHistory.page - 1)}
                   disabled={displayedHistory.page === 0}
-                  aria-label="Previous signals page">
+                  aria-label="Previous signals page"
+                >
                   Previous
                 </button>
                 <span>Page {displayedHistory.page + 1} of {displayedHistory.pageCount}</span>
@@ -1039,7 +1088,8 @@ export function MarketDashboard() {
                   type="button"
                   onClick={() => setRecentPage(displayedHistory.page + 1)}
                   disabled={displayedHistory.page + 1 >= displayedHistory.pageCount}
-                  aria-label="Next signals page">
+                  aria-label="Next signals page"
+                >
                   Next
                 </button>
               </div>

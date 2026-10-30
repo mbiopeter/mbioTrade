@@ -1,5 +1,16 @@
 # Changelog
 
+## v30.0.0
+
+- Changed Recent Signals pagination to two completed results per page.
+- Added spacing below pagination navigation without changing the existing dashboard layout.
+- Added a server-side high-impact economic-calendar feed for the supported forex and Gold markets.
+- Paused all new signal activation from three hours before through two hours after relevant high-impact news.
+- Added conservative protection for announcements with unknown release hours.
+- Paused new signals whenever the calendar cannot be verified; active SL/TP tracking remains operational.
+- Added a compact news-status display and source attribution to the existing signal panel.
+- Preserved all existing 100-result history, CSV export, market statistics and saved active signals.
+
 ## v29.0.0
 
 - Increased the stored completed-signal limit from 50 per pair to 100 across all supported pairs.

@@ -27,6 +27,7 @@ type SignalLedgerOptions = {
   setup: Setup;
   now: number;
   isLive: boolean;
+  allowNewSignals: boolean;
   bars5: Candle[];
   bars15: Candle[];
   barsH1: Candle[];
@@ -43,6 +44,7 @@ export function useSignalLedger({
   setup,
   now,
   isLive,
+  allowNewSignals,
   bars5,
   bars15,
   barsH1,
@@ -89,6 +91,10 @@ export function useSignalLedger({
 
         if (sourceChanged || missingHistory) return previous;
         return update(previous, symbol, reconcile(current, bars5, now).signal);
+      }
+
+      if (!allowNewSignals) {
+        return closePending(previous, symbol);
       }
 
       if (!isLive || !setup.dataCurrent || !setup.momentum.complete) {
@@ -181,6 +187,7 @@ export function useSignalLedger({
     setup.momentum.complete,
     now,
     isLive,
+    allowNewSignals,
     bars5,
     bars15,
     barsH1,

@@ -129,14 +129,14 @@ test("reading an older v26 localStorage ledger retains up to 100 across pairs", 
   assert.equal(parsed.active.GBPUSD?.id, "closed-500");
 });
 
-test("three signals per page, correct navigation, empty and out-of-range handling", () => {
+test("two signals per page, correct navigation, empty and out-of-range handling", () => {
   const signals = Array.from({ length: 10 }, (_, index) => makeSignal(index));
-  assert.equal(SIGNALS_PER_PAGE, 3);
-  assert.deepEqual(signalPage(signals, 0).items.map((value) => value.id), ["closed-0", "closed-1", "closed-2"]);
-  assert.deepEqual(signalPage(signals, 1).items.map((value) => value.id), ["closed-3", "closed-4", "closed-5"]);
-  assert.deepEqual(signalPage(signals, 2).items.map((value) => value.id), ["closed-6", "closed-7", "closed-8"]);
-  assert.deepEqual(signalPage(signals, 3).items.map((value) => value.id), ["closed-9"]);
-  assert.equal(signalPage(signals, 30).page, 3);
+  assert.equal(SIGNALS_PER_PAGE, 2);
+  assert.deepEqual(signalPage(signals, 0).items.map((value) => value.id), ["closed-0", "closed-1"]);
+  assert.deepEqual(signalPage(signals, 1).items.map((value) => value.id), ["closed-2", "closed-3"]);
+  assert.deepEqual(signalPage(signals, 2).items.map((value) => value.id), ["closed-4", "closed-5"]);
+  assert.deepEqual(signalPage(signals, 4).items.map((value) => value.id), ["closed-8", "closed-9"]);
+  assert.equal(signalPage(signals, 30).page, 4);
   assert.equal(signalPage(signals, -7).page, 0);
   assert.deepEqual(signalPage([], 3), { items: [], page: 0, pageCount: 1, total: 0, from: 0, to: 0 });
 });
@@ -150,7 +150,7 @@ test("CSV includes all stored trades with only Time, Direction, Pair, Result col
   const rows = csv.trim().split("\r\n");
   assert.equal(rows[0], "Time,Direction,Pair,Result");
   assert.equal(rows.length, 12);
-  assert.equal(page.items.length, 3);
+  assert.equal(page.items.length, 2);
   assert.match(rows[1], /^"2026-10-20T\d\d:\d\d:\d\d\.000Z","BUY","AUDUSD","TP \+2\.00R"$/);
   assert.ok(rows.some((row) => row.includes('"SL -1.00R"')));
   assert.doesNotMatch(rows[0], /Entry|Stop|Target|TP|SL/);

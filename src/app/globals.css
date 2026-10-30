@@ -1577,9 +1577,10 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
   justify-content: space-between;
   gap: 8px;
   border-top: 1px solid #153342;
-  padding: 8px 12px 10px;
+  padding: 9px 12px 14px;
+  margin: 0 12px 18px;
+  border-radius: 0 0 9px 9px;
   font-size: 10px;
-  margin-bottom: 2px;
   color: #91adb4;
 }
 
@@ -1634,5 +1635,74 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
 
   .mbiotraders-recent-page-controls {
     gap: 4px;
+  }
+}
+
+.mbiotraders-news-guard {
+  margin: 0 13px 13px;
+  padding: 10px 11px;
+  border: 1px solid rgba(35, 116, 93, 0.45);
+  background: rgba(7, 40, 37, 0.45);
+  border-radius: 9px;
+  color: #b7d4cf;
+}
+
+.mbiotraders-news-guard.blocked,
+.mbiotraders-news-guard.unavailable {
+  border-color: rgba(213, 150, 73, 0.38);
+  background: rgba(79, 51, 31, 0.24);
+}
+
+.mbiotraders-news-guard-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+}
+
+.mbiotraders-news-guard-heading span {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #5cf0b7;
+}
+
+.mbiotraders-news-guard.blocked .mbiotraders-news-guard-heading span,
+.mbiotraders-news-guard.unavailable .mbiotraders-news-guard-heading span {
+  color: #e7b86b;
+}
+
+.mbiotraders-news-guard p {
+  margin: 7px 0 6px;
+  color: #a9c4c2;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.mbiotraders-news-guard small {
+  display: block;
+  color: #bad2c9;
+  font-size: 10px;
+  line-height: 1.45;
+  margin-bottom: 7px;
+}
+
+.mbiotraders-news-guard a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #6fe0ba;
+  font-size: 10px;
+  text-decoration: none;
+}
+
+.mbiotraders-news-guard a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 760px) {
+  .mbiotraders-recent-pagination {
+    margin-bottom: 20px;
   }
 }
