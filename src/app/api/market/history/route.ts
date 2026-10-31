@@ -19,13 +19,19 @@ export async function GET(request: NextRequest) {
     !Number.isSafeInteger(before) ||
     before < 0 ||
     before > Date.now() / 1000 + 86_400 ||
-    (provider !== "deriv" && provider !== "twelvedata");
+    (provider !== "deriv" && provider !== "twelvedata" && provider !== "kraken");
 
   if (invalid || !instrument) {
     return NextResponse.json(
       { error: "Invalid history request" },
       { status: 400 },
     );
+  }
+
+  if (provider === "kraken") {
+    return NextResponse.json({
+      symbol: instrument.symbol, frame, provider, candles: [], exhausted: true,
+    }, { headers: { "Cache-Control": "no-store" } });
   }
 
   try {

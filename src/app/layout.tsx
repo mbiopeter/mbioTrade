@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
   category: "finance",
   keywords: [
-    "mbioTraders", "live forex signals", "gold signals", "XAUUSD technical analysis",
+    "mbioTraders", "live forex signals", "gold signals", "XAUUSD technical analysis", "BTCUSD crypto signals", "Bitcoin market strength",
     "market strength gauge", "multi timeframe analysis", "EURUSD", "GBPUSD",
     "technical indicators", "forex dashboard",
   ],

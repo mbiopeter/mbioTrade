@@ -7,7 +7,7 @@ export type Direction = "BUY" | "SELL";
 export type TrackedSignal = {
   id: string;
   symbol: MarketSymbol;
-  provider: "deriv" | "twelvedata";
+  provider: "deriv" | "twelvedata" | "kraken";
   direction: Direction;
   entry: number;
   stop: number;
@@ -53,6 +53,7 @@ const markets = [
   "USDJPY",
   "AUDUSD",
   "USDCAD",
+  "BTCUSD",
 ] as const;
 
 function valid(value: unknown): value is TrackedSignal {
@@ -71,7 +72,7 @@ function valid(value: unknown): value is TrackedSignal {
   return (
     typeof signal.id === "string" &&
     markets.includes(signal.symbol as MarketSymbol) &&
-    (signal.provider === "deriv" || signal.provider === "twelvedata") &&
+    (signal.provider === "deriv" || signal.provider === "twelvedata" || signal.provider === "kraken") &&
     validDirection &&
     ["ACTIVE", "SL", "TP"].includes(signal.status ?? "") &&
     Number.isSafeInteger(signal.openedAt) &&
@@ -175,7 +176,7 @@ export function closePending(book: Ledger, symbol: MarketSymbol): Ledger {
 type PlanOptions = {
   id: string;
   symbol: MarketSymbol;
-  provider: "deriv" | "twelvedata";
+  provider: "deriv" | "twelvedata" | "kraken";
   direction: Direction;
   entry: number;
   openedAt: number;

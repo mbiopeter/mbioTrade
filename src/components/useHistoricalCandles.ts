@@ -53,7 +53,7 @@ export function useHistoricalCandles({
   const base = payload?.frames[frame] ?? EMPTY_BARS;
   const provider = payload?.provider ?? null;
   const key = provider ? `${provider}:${symbol}:${frame}` : "";
-  const ready = enabled && base.length > 0 && provider !== null;
+  const ready = enabled && base.length > 0 && provider !== null && provider !== "kraken";
 
   const [state, setState] = useState<HistoryState>({
     key: "",

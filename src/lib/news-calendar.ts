@@ -56,6 +56,7 @@ const SYMBOL_COUNTRIES: Record<MarketSymbol, readonly string[]> = {
   USDJPY: ["JP", "US"],
   AUDUSD: ["AU", "US"],
   USDCAD: ["CA", "US"],
+  BTCUSD: ["US"],
 };
 
 function dayUtc(value: unknown): number | null {

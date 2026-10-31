@@ -17,8 +17,8 @@ function snapshot(direction=1, anchor=1761742800) {
   return {symbol:'XAUUSD',frames};
 }
 
-test('six valid instruments, Gold and five forex pairs',()=>{
-  assert.deepEqual(INSTRUMENTS.map(x=>x.symbol),['XAUUSD','EURUSD','GBPUSD','USDJPY','AUDUSD','USDCAD']);
+test('seven valid instruments, Gold, five forex pairs and BTCUSD crypto',()=>{
+  assert.deepEqual(INSTRUMENTS.map(x=>x.symbol),['XAUUSD','BTCUSD','EURUSD','GBPUSD','USDJPY','AUDUSD','USDCAD']);
   assert.equal(resolveSymbol('OTHER'),null);
 });
 test('OHLC rows sorted, invalid and duplicate points rejected',()=>{

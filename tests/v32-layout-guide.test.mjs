@@ -9,8 +9,8 @@ const pkg = JSON.parse(read("package.json"));
 const lock = JSON.parse(read("package-lock.json"));
 
 test("v32 includes synchronized npm install lockfile", () => {
-  assert.equal(pkg.name, "mbiotraders-v32");
-  assert.equal(pkg.version, "32.0.0");
+  assert.equal(pkg.name, "mbiotraders-v33");
+  assert.equal(pkg.version, "33.0.0");
   assert.equal(pkg.name, lock.name);
   assert.equal(pkg.version, lock.version);
   assert.equal(pkg.version, lock.packages[""].version);

@@ -5,6 +5,7 @@ import {
   Activity,
   Bell,
   BellOff,
+  Bitcoin,
   Check,
   ChartNoAxesCombined,
   Clock3,
@@ -43,6 +44,7 @@ import {
   FRAMES,
   FRAME_LABELS,
   INSTRUMENTS,
+  parseKrakenTicker,
   type Frame,
   type MarketPayload,
   type MarketSymbol,
@@ -204,7 +206,7 @@ function useMarket(symbol: MarketSymbol) {
         error: null,
         checkedAt: Date.now(),
         requestSymbol: symbol,
-        streamRetrying: payload.provider === "deriv" && state.payload?.provider === "deriv"
+        streamRetrying: (payload.provider === "deriv" || payload.provider === "kraken") && state.payload?.provider === payload.provider
           ? state.streamRetrying
           : false,
         quote: state.payload?.symbol === symbol ? state.quote : null,
@@ -255,7 +257,9 @@ function useMarket(symbol: MarketSymbol) {
   }, [reload]);
 
   useEffect(() => {
-    const stream = feed.payload?.provider === "deriv" ? feed.payload.streamSymbol : null;
+    const currentProvider = feed.payload?.provider;
+    const stream = (currentProvider === "deriv" || currentProvider === "kraken")
+      ? feed.payload?.streamSymbol : null;
     if (!stream) return;
     let socket: WebSocket | null = null;
     let closed = false;
@@ -285,13 +289,19 @@ function useMarket(symbol: MarketSymbol) {
     function connect() {
       if (closed) return;
       let candidate: WebSocket;
-      try { candidate = new WebSocket("wss://api.derivws.com/trading/v1/options/ws/public"); }
+      try { candidate = new WebSocket(currentProvider === "kraken"
+        ? "wss://ws.kraken.com/v2"
+        : "wss://api.derivws.com/trading/v1/options/ws/public"); }
       catch { retryConnection(); return; }
       socket = candidate;
       lastTick = 0;
       candidate.onopen = () => {
         if (closed || candidate !== socket) return;
-        try { candidate.send(JSON.stringify({ ticks: stream, subscribe: 1, req_id: 901 })); }
+        try {
+          candidate.send(JSON.stringify(currentProvider === "kraken"
+            ? { method: "subscribe", params: { channel: "ticker", symbol: [stream], event_trigger: "trades", snapshot: true }, req_id: 901 }
+            : { ticks: stream, subscribe: 1, req_id: 901 }));
+        }
         catch { retryConnection(); return; }
         firstTickTimeout = setTimeout(() => {
           if (candidate === socket && !lastTick) retryConnection();
@@ -307,17 +317,28 @@ function useMarket(symbol: MarketSymbol) {
             msg_type?: string;
             tick?: { quote?: number | string; epoch?: number; symbol?: string };
             error?: unknown;
+            success?: boolean;
           };
-          if (value.error) { retryConnection(); return; }
-          if (value.msg_type !== "tick" || !value.tick || value.tick.symbol !== stream) return;
-          const quote = Number(value.tick.quote);
-          const epoch = Number(value.tick.epoch);
-          if (!Number.isFinite(quote) || quote <= 0 || !Number.isFinite(epoch) || Math.abs(Date.now() / 1000 - epoch) > 120) return;
+          if (value.error || value.success === false) { retryConnection(); return; }
+          let quote: number;
+          let tickTime: number;
+          if (currentProvider === "kraken") {
+            const tick = parseKrakenTicker(value, Date.now(), stream ?? undefined);
+            if (!tick) return;
+            quote = tick.price;
+            tickTime = tick.at;
+          } else {
+            if (value.msg_type !== "tick" || !value.tick || value.tick.symbol !== stream) return;
+            quote = Number(value.tick.quote);
+            const epoch = Number(value.tick.epoch);
+            if (!Number.isFinite(quote) || quote <= 0 || !Number.isFinite(epoch) || Math.abs(Date.now() / 1000 - epoch) > 120) return;
+            tickTime = epoch * 1000;
+          }
           lastTick = Date.now();
           attempts = 0; // Reset after actual data, not just the socket opening.
           if (firstTickTimeout !== null) { clearTimeout(firstTickTimeout); firstTickTimeout = null; }
           setFeed((state) => state.payload?.symbol === symbol
-            ? { ...state, quote, quoteAt: epoch * 1000, streaming: true, streamRetrying: false }
+            ? { ...state, quote, quoteAt: tickTime, streaming: true, streamRetrying: false }
             : state);
         } catch {  }
       };
@@ -574,7 +595,7 @@ export function MarketDashboard() {
   };
   const quoteFresh = feed.quoteAt !== null && now - feed.quoteAt < 120_000;
   const selected = useMemo(() => {
-    if (feed.streaming && quoteFresh && feed.quote !== null && feed.quoteAt !== null && payload.provider === "deriv") {
+    if (feed.streaming && quoteFresh && feed.quote !== null && feed.quoteAt !== null && (payload.provider === "deriv" || payload.provider === "kraken")) {
       return evaluateLiveFrame(chartCandles, frame, now, feed.quote, feed.quoteAt);
     }
     return setup.frames[frame];
@@ -811,11 +832,13 @@ export function MarketDashboard() {
                 <button
                   key={item.symbol}
                   type="button"
-                  className={`mbiotraders-symbol-tab ${symbol === item.symbol ? "active" : ""}`}
+                  className={`mbiotraders-symbol-tab ${item.symbol === "BTCUSD" ? "crypto" : ""} ${symbol === item.symbol ? "active" : ""}`}
                   onClick={() => setSymbol(item.symbol)}
                   aria-pressed={symbol === item.symbol}
                 >
-                  {item.symbol === "XAUUSD" ? (
+                  {item.symbol === "BTCUSD" ? (
+                    <Bitcoin size={16} color="#f7931a" aria-hidden="true" />
+                  ) : item.symbol === "XAUUSD" ? (
                     <span className="mbiotraders-gold-mark">◆</span>
                   ) : (
                     <span className="mbiotraders-flag-mark">
@@ -857,7 +880,7 @@ export function MarketDashboard() {
           <section className="mbiotraders-card mbiotraders-chart-card">
             <div className="mbiotraders-card-head mbiotraders-chart-head">
               <div>
-                <div className="mbiotraders-chart-title">{instrument.symbol} · {FRAME_LABELS[frame]} · FX</div>
+                <div className="mbiotraders-chart-title">{instrument.symbol} · {FRAME_LABELS[frame]} · {symbol === "BTCUSD" ? "CRYPTO" : "FX"}</div>
                 <div className="mbiotraders-chart-price-row">
                   <span className={`mbiotraders-live-dot large ${isLive ? "" : "off"}`} />
                   <span className="mbiotraders-price-label">O</span><strong>{price(last?.open ?? currentPrice, instrument.precision)}</strong>

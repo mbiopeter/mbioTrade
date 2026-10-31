@@ -1,15 +1,17 @@
-# mbioTraders v32
+# mbioTraders v33
 
-A compact, responsive Gold and forex signal dashboard. **This v32 release is built directly on the rebuilt v31 codebase** (itself based on the uploaded v30 archive). It retains the market feeds, economic-calendar filter, six instruments, live chart, technical gauge, retry logic, five-timeframe signal strategy, persistent signals, 100-result history, CSV export, two-result pagination, alerts and SEO.
+A compact, responsive **Gold, forex and cryptocurrency** signal dashboard. Built directly from the user-supplied v32 ZIP, with the same established signal engine, news blackout, existing six instruments, candlestick chart, strength gauge, automatic retry, persisted positions, 100-entry history, CSV export, two-row pagination, real browser alerts, SEO and downloadable version-free illustrated guide.
 
-**What's new:** The dashboard uses a compact three-column layout on standard desktop screens (1200px and wider, with a viewport at least 700px high), a two-column layout on tablets (761–1199px), and a single column on phones. All nine dashboard sections remain present. The header now includes a **Signal Guide** PDF download, without a version number anywhere in the guide, and the notification success message no longer occupies header space.
+**New in v33:** Enlarged the heading and supporting text inside **Multi-Timeframe Trend Alignment**, **Overall Market Strength**, **Signal Setup Details**, **Key Levels**, and **Market Statistics**, while retaining a single-screen three-column desktop layout and two-column tablet layout. Added **BTCUSD (Bitcoin/U.S. dollar)** as the seventh market, with actual 24/7 spot candlesticks from Kraken's public API and public live price updates through its ticker WebSocket. Existing Gold and five forex pairs retain their original data providers and strategy rules. BTCUSD participates in the same alignment, 5m entry, 2R exits, saved-signal journal, browser alerts and USD news blackout.
+
+**BTCUSD market limitations:** Kraken's OHLC endpoint exposes up to **720 recent candles per interval**; older history cannot be backfilled from that endpoint. Six separate calls are paced to respect API rate limits, and Kraken or network outages stop new crypto signals rather than generating fabricated candles. Its newest OHLC bar is unfinished: the trading engine only uses closed candles for confirmations, except that it reads the actual opening of the third 5m bar for entry. When a server-side Twelve Data key is configured, Twelve Data can provide backup BTC/USD snapshots if Kraken fails, without pretending snapshot data is a live tick stream. Public Kraken data is not guaranteed to match other brokers or exchanges.
 
 ## Install and run
 
-Use **Node.js 22.16.0 or newer**. This ZIP **includes `package-lock.json`**; do not delete it before running the following commands:
+Use **Node.js 24.x**, pinned in `package.json` and `.nvmrc` for Vercel compatibility. This ZIP **includes `package-lock.json`**; do not delete it before running the following commands:
 
 ```bash
-cd mbiotraders-v32
+cd mbiotraders-v33
 npm ci
 npm run doctor
 npm test
@@ -22,7 +24,7 @@ Open `http://localhost:3000`. The project includes a valid, synchronized `packag
 
 The **Signal Guide** link next to Alerts downloads `/mbiotraders-signal-guide.pdf`; the PDF is already bundled under `public/`, so it also works on Vercel with no extra server route.
 
-## Signal strategy (unchanged from v31)
+## Signal strategy (unchanged from v32)
 
 The required trend-alignment charts are **15m, 30m, 1H, 4H and 1D**. All five must agree on BUY or SELL. The 5m chart is used only for timing and does not count against trend alignment. The existing multi-day momentum setting defaults to **7 trading days**; 3D and 5D remain available.
 
@@ -47,11 +49,11 @@ The checklist now shows all seven strategy checks and the news-calendar status w
 
 ## News filter (preserved from v30)
 
-A server-side route at `/api/news-calendar` uses the Finance Calendar feed to pause **new signals** for the selected pair during the interval from **3 hours before through 2 hours after** relevant high-impact economic releases. Unconfirmed release times, missing, stale or unverifiable calendar coverage cause a conservative block. Gold follows USD releases; forex pairs follow their currency countries. Active signals continue TP/SL verification during a blackout. The feed cannot guarantee that every possible market-moving announcement is listed.
+A server-side route at `/api/news-calendar` uses the Finance Calendar feed to pause **new signals** for the selected pair during the interval from **3 hours before through 2 hours after** relevant high-impact economic releases. Unconfirmed release times, missing, stale or unverifiable calendar coverage cause a conservative block. Gold and Bitcoin follow USD releases; forex pairs follow their currency countries. Active signals continue TP/SL verification during a blackout. The feed cannot guarantee that every possible market-moving announcement is listed.
 
 ## Optional market feed and production configuration
 
-Copy `.env.example` to `.env.local` for `TWELVE_DATA_API_KEY` if desired. Without it, public Deriv market data is used where supported. Add the following to production environment variables:
+Copy `.env.example` to `.env.local` for `TWELVE_DATA_API_KEY` if desired. Without it, public Deriv market data is used for Gold and forex where supported, and public Kraken market data is used for BTCUSD without an API key. Add the following to production environment variables:
 
 ```env
 NEXT_PUBLIC_SITE_URL=https://traders.mbiopeter.co.ke
@@ -61,6 +63,6 @@ The server-side key must **never** be exposed to the browser. Provider limitatio
 
 ## Validation
 
-Run `npm test` for the full regression suite, including v32 layout and PDF checks. `npm run doctor` confirms required files, the App Router error boundary and a matching lockfile. The production build was **not verifiable in the release environment** because its npm registry was unreachable; run `npm ci && npm run check && npm run build` on your computer before deploying.
+Run `npm test` for the full regression suite, including v32 layout and PDF checks and v33 BTCUSD provider, ledger, news and typography checks. `npm run doctor` confirms required files, the App Router error boundary and a matching lockfile. The production build was **not verifiable in the release environment** because its npm registry was unreachable; run `npm ci && npm run check && npm run build` on your computer before deploying.
 
-See `docs/V32-RELEASE.md` for v32 design changes and `docs/V31-RELEASE.md` for the unchanged trading-logic details and limitations. This is a **signal-only tool**, not an order execution system, and does not guarantee profitable trades.
+See `docs/V33-RELEASE.md` for v33 changes, `docs/V32-RELEASE.md` for the retained layout, and `docs/V31-RELEASE.md` for original signal-logic details and limitations. This is a **signal-only tool**, not an order execution system, and does not guarantee profitable trades.

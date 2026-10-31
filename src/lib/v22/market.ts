@@ -3,6 +3,7 @@ import type { Candle } from "../types.ts";
 
 export const INSTRUMENTS = [
   { symbol: "XAUUSD", label: "Gold", sub: "XAU / USD", deriv: "frxXAUUSD", twelve: "XAU/USD", precision: 2 },
+  { symbol: "BTCUSD", label: "Bitcoin", sub: "BTC / USD · Crypto", deriv: "", twelve: "BTC/USD", precision: 4 },
   { symbol: "EURUSD", label: "EUR/USD", sub: "Euro / Dollar", deriv: "frxEURUSD", twelve: "EUR/USD", precision: 5 },
   { symbol: "GBPUSD", label: "GBP/USD", sub: "Pound / Dollar", deriv: "frxGBPUSD", twelve: "GBP/USD", precision: 5 },
   { symbol: "USDJPY", label: "USD/JPY", sub: "Dollar / Yen", deriv: "frxUSDJPY", twelve: "USD/JPY", precision: 3 },
@@ -18,7 +19,7 @@ export const FRAME_LABELS: Record<Frame,string> = {
 export type FrameSeries = Partial<Record<Frame,Candle[]>>;
 export type MarketPayload = {
   symbol: MarketSymbol;
-  provider: "twelvedata" | "deriv";
+  provider: "twelvedata" | "deriv" | "kraken";
   providerName: string;
   sourceNote: string;
   fetchedAt: number;
@@ -56,6 +57,69 @@ export function parseCandles(rows: unknown, frame: Frame, timeKey: "epoch" | "da
   bars.sort((a,b)=>a.time-b.time);
   if (bars.length < minBars) throw new Error(`${FRAME_LABELS[frame]} data has fewer than 60 valid actual bars`);
   return bars;
+}
+
+export function parseKrakenRows(rows: unknown, frame: Frame, minBars = 60): Candle[] {
+  if (!Array.isArray(rows)) throw new Error(`Missing Kraken ${FRAME_LABELS[frame]} candles`);
+  const normalized = rows.map((row) => {
+    if (!Array.isArray(row) || row.length < 5) return null;
+    return { epoch: row[0], open: row[1], high: row[2], low: row[3], close: row[4] };
+  });
+  return parseCandles(normalized, frame, "epoch", minBars);
+}
+
+export function parseKrakenTicker(payload: unknown, at = Date.now(), symbol = "BTC/USD"):
+  { price: number; at: number } | null {
+  if (!payload || typeof payload !== "object") return null;
+  const value = payload as { channel?: unknown; data?: unknown };
+  if (value.channel !== "ticker" || !Array.isArray(value.data)) return null;
+  const tick = value.data.find((entry) => !!entry && typeof entry === "object" &&
+    (entry as { symbol?: unknown }).symbol === symbol) as
+    { last?: unknown; timestamp?: unknown } | undefined;
+  if (!tick || typeof tick.timestamp !== "string") return null;
+  const price = Number(tick.last);
+  const time = Date.parse(tick.timestamp);
+  if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(time) ||
+      Math.abs(time - at) > 120_000) return null;
+  return { price, at: time };
+}
+
+export async function fetchKraken(
+  symbol: "BTCUSD", fetcher: typeof fetch = fetch,
+  pause: (ms: number) => Promise<void> = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+): Promise<MarketPayload> {
+  const frames: FrameSeries = {};
+  const intervals: Record<Frame, number> = {
+    300: 5, 900: 15, 1800: 30, 3600: 60, 14400: 240, 86400: 1440,
+  };
+  for (const [index, frame] of FRAMES.entries()) {
+    if (index > 0) await pause(1_100);
+    const url = new URL("https://api.kraken.com/0/public/OHLC");
+    url.searchParams.set("pair", "XBTUSD");
+    url.searchParams.set("interval", String(intervals[frame]));
+    const response = await fetcher(url.toString(), {
+      cache: "no-store", signal: AbortSignal.timeout(12_000),
+    });
+    if (!response.ok) throw new Error(`Kraken OHLC HTTP ${response.status}`);
+    const data = await response.json() as {
+      error?: unknown; result?: Record<string, unknown>;
+    };
+    if (!Array.isArray(data.error) || data.error.length || !data.result ||
+        typeof data.result !== "object") {
+      throw new Error(`Kraken OHLC unavailable for ${FRAME_LABELS[frame]}`);
+    }
+    const rows = Object.entries(data.result).find(([key, values]) =>
+      key !== "last" && Array.isArray(values))?.[1];
+    frames[frame] = parseKrakenRows(rows, frame);
+  }
+  validateFrames(frames);
+  return {
+    symbol,
+    provider: "kraken",
+    providerName: "Kraken · BTC/USD spot",
+    sourceNote: "Kraken public spot BTC/USD, 24/7. Up to 720 recent candles per timeframe (older bars cannot be requested from this feed). Latest candle is in-progress; confirmation uses completed candles only. Quotes stream via Kraken public ticker.",
+    fetchedAt: Date.now(), frames, warnings: [], streamSymbol: "BTC/USD",
+  };
 }
 
 function validateFrames(frames: FrameSeries): void {
@@ -155,6 +219,15 @@ export async function fetchDeriv(symbol: MarketSymbol, socketFactory?: SocketFac
 
 
 export async function fetchMarket(symbol: MarketSymbol, key = process.env.TWELVE_DATA_API_KEY ?? ""): Promise<MarketPayload> {
+  if (symbol === "BTCUSD") {
+    try { return await fetchKraken(symbol); }
+    catch (error) {
+      if (!key.trim()) throw error;
+      const fallback = await fetchTwelveData(symbol, key.trim());
+      fallback.warnings.push("Kraken BTC/USD was unavailable; using Twelve Data BTC/USD snapshots (live streaming paused).");
+      return fallback;
+    }
+  }
   if (key.trim()) {
     try {return await fetchTwelveData(symbol,key.trim());}
     catch {const fallback=await fetchDeriv(symbol);fallback.warnings.push("Preferred provider unavailable; using public Deriv history. Configure or review TWELVE_DATA_API_KEY to restore Twelve Data.");return fallback;}

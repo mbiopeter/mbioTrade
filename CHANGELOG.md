@@ -1,5 +1,15 @@
 # Changelog
 
+## v33.0.0
+
+- Increased heading and data-label font sizes in Multi-Timeframe Trend Alignment, Overall Market Strength, Signal Setup Details, Key Levels and Market Statistics while keeping the compact responsive layout.
+- Added BTCUSD as the seventh instrument, trading with Kraken public spot BTC/USD 5m, 15m, 30m, 1H, 4H and 1D OHLC and live WebSocket ticker prices (no crypto API key required).
+- Rate-limited Kraken OHLC requests and respected the provider's 720-candle lookback limit; missing or interrupted market data fails closed and historical candles are never invented.
+- Added BTCUSD to saved trade history, one-active-signal-per-pair tracking, browser notifications, chart selection, CSV and USD high-impact news protection.
+- Preserved the existing five-frame alignment and third-5m-bar confirmation, prior-swing stop, 2R target, persistence, and all six former instruments.
+- Pinned Node.js to 24.x for predictable Vercel builds, with matching package-lock.json and .nvmrc.
+
+
 ## v32.0.0
 
 - Compressed all nine dashboard sections into a viewport-fit three-column layout for standard desktop resolutions without losing the full Signal Setup checklist.
