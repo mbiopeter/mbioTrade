@@ -12,7 +12,9 @@ const necessary = [
   'src/app/api/news-calendar/route.ts',
   'src/lib/v22/market.ts', 'src/lib/v22/analysis.ts',
   'src/lib/v231/momentum.ts', 'src/lib/v231/gauge.ts',
-  'src/lib/v26-signals.ts', 'src/lib/signal-history.ts', 'src/lib/v26-history.ts', 'src/components/useSignalLedger.ts', 'src/components/useHistoricalCandles.ts', 'src/app/api/market/history/route.ts', 'next.config.ts',
+  'src/lib/v26-signals.ts', 'src/lib/signal-history.ts',
+  'src/lib/v31/entry.ts', 'src/lib/v31/browser-alerts.ts',
+  'src/components/browserNotifications.ts', 'public/notification-sw.js', 'public/mbiotraders-signal-guide.pdf', 'src/lib/v26-history.ts', 'src/components/useSignalLedger.ts', 'src/components/useHistoricalCandles.ts', 'src/app/api/market/history/route.ts', 'next.config.ts',
 ];
 const absent = necessary.filter(file => !existsSync(resolve(root,file)));
 if (absent.length) {
@@ -26,6 +28,10 @@ if (!boundary.startsWith('"use client";') && !boundary.startsWith("'use client';
 }
 const pkg=JSON.parse(readFileSync(resolve(root,'package.json'),'utf8'));
 const lockPath=resolve(root,'package-lock.json');
+if (!existsSync(lockPath)) {
+  console.error('package-lock.json is required for npm ci. The release archive is incomplete.');
+  process.exit(1);
+}
 if (existsSync(lockPath)) {
   const lock=JSON.parse(readFileSync(lockPath,'utf8'));
   if (pkg.name!==lock.name || pkg.version!==lock.version ||
@@ -36,4 +42,4 @@ if (existsSync(lockPath)) {
   }
 }
 
-console.log(`mbioTraders ${pkg.version}: ${necessary.length} required files present, App Router boundary valid. ${existsSync(lockPath) ? 'npm lock matches.' : 'Run npm install to create the new gauge dependency lockfile.'}`);
+console.log(`mbioTraders ${pkg.version}: ${necessary.length} required files present, App Router boundary valid. npm lock matches; npm ci is supported.`);

@@ -134,12 +134,12 @@ test("two recent signals per page and navigation has bottom spacing", () => {
   assert.match(stylesheet, /\.mbiotraders-recent-pagination\s*\{[^}]*margin:\s*0 12px 18px/s);
 });
 
-test("news gate is before both direct signal activation and pending breakout, but after live exit reconciliation", () => {
+test("news gate checks before legacy pending clearance and new third-candle activation, but after active exit reconciliation", () => {
   const source = readFileSync(new URL("../src/components/useSignalLedger.ts", import.meta.url), "utf8");
   const current = source.indexOf("const current = previous.active[symbol]");
   const gate = source.indexOf("if (!allowNewSignals)");
   const pending = source.indexOf("const waiting = previous.pending[symbol]");
-  const created = source.indexOf("return candidate ? activate(previous, candidate)");
+  const created = source.indexOf("return activate(previous, candidate)");
   assert.ok(current >= 0 && current < gate && gate < pending && pending < created);
   assert.match(source, /allowNewSignals: boolean/);
   assert.match(source, /return closePending\(previous, symbol\)/);

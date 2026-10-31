@@ -9,14 +9,10 @@ import {
   LEDGER_KEY,
   activate,
   closePending,
-  confirmedBreakout,
   emptyLedger,
-  nearbyBarrier,
   parseLedger,
-  plan,
   reconcile,
   seen,
-  setPending,
   update,
   type Ledger,
 } from "@/lib/v26-signals";
@@ -102,76 +98,35 @@ export function useSignalLedger({
       }
 
       const waiting = previous.pending[symbol];
-      if (waiting) {
-        if (now - waiting.createdAt > 6 * 3_600_000) {
-          return closePending(previous, symbol);
-        }
-        if (setup.bias !== waiting.direction) return previous;
-
-        const confirmedAt = confirmedBreakout(waiting, bars5, now);
-        if (!confirmedAt || now - confirmedAt >= 300_000) return previous;
-
-        const bar = bars5.find(
-          (candle) => (candle.time + 300) * 1000 === confirmedAt,
-        );
-        if (!bar) return previous;
-
-        const candidate = plan({
-          id: `${waiting.id}-break-${confirmedAt}`,
-          symbol,
-          provider,
-          direction: waiting.direction,
-          entry: bar.close,
-          openedAt: confirmedAt,
-          confidence: waiting.confidence,
-          five: bars5,
-          fifteen: bars15,
-          hourly: barsH1,
-        });
-
-        return candidate ? activate(previous, candidate) : previous;
-      }
+      if (waiting) return closePending(previous, symbol);
 
       if (
-        !["BUY", "SELL"].includes(setup.status) ||
-        !setup.signalId ||
-        !setup.time ||
-        setup.entry === null ||
-        now - setup.time < 0 ||
-        now - setup.time >= 300_000 ||
+        (setup.status !== "BUY" && setup.status !== "SELL") ||
+        !setup.signalId || !setup.time ||
+        setup.entry === null || setup.stop === null || setup.target === null ||
+        now < setup.time || now - setup.time > 90_000 ||
         seen(previous, symbol, setup.signalId)
       ) {
         return previous;
       }
 
-      const direction = setup.status as "BUY" | "SELL";
-      const barrier = nearbyBarrier(bars5, direction, setup.entry, setup.time);
-
-      if (barrier !== null) {
-        return setPending(previous, {
-          id: setup.signalId,
-          symbol,
-          direction,
-          level: barrier,
-          createdAt: setup.time,
-          confidence: setup.score,
-        });
-      }
-
-      const candidate = plan({
+      const candidate = {
         id: setup.signalId,
         symbol,
         provider,
-        direction,
+        direction: setup.status,
         entry: setup.entry,
+        stop: setup.stop,
+        target: setup.target,
         openedAt: setup.time,
         confidence: setup.score,
-        five: bars5,
-        fifteen: bars15,
-        hourly: barsH1,
-      });
-
-      return candidate ? activate(previous, candidate) : previous;
+        status: "ACTIVE" as const,
+        lastCheckedAt: setup.time,
+        closedAt: null,
+        exitPrice: null,
+        resultR: null,
+      };
+      return activate(previous, candidate);
     });
   }, [
     ready,
@@ -189,8 +144,6 @@ export function useSignalLedger({
     isLive,
     allowNewSignals,
     bars5,
-    bars15,
-    barsH1,
   ]);
 
   const active = ledger.active[symbol] ?? null;

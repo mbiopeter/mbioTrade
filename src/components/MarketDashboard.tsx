@@ -12,6 +12,7 @@ import {
   CalendarClock,
   ExternalLink,
   Info,
+  BookOpen,
   RefreshCcw,
   ShieldCheck,
   TrendingDown,
@@ -25,6 +26,8 @@ import { useSignalLedger } from "@/components/useSignalLedger";
 import { useNewsCalendar } from "@/components/useNewsCalendar";
 import { NEWS_SOURCE_URL } from "@/lib/news-calendar";
 import { LEDGER_KEY, parseLedger } from "@/lib/v26-signals";
+import { BROWSER_ALERT_HISTORY_KEY, browserAlertFor, eligibleForNewAlert, parseAlertHistory, rememberBrowserAlert } from "@/lib/v31/browser-alerts";
+import { notificationSupported, requestBrowserNotificationPermission, sendBrowserSignalNotification } from "@/components/browserNotifications";
 import {
   exportSignalsCsv,
   formatSignalResult,
@@ -347,6 +350,7 @@ type FrameTileProps = {
   onClick: () => void;
   direction?: "BUY" | "SELL" | "NEUTRAL";
   changePct?: number | null;
+  entryOnly?: boolean;
 };
 
 function FrameTile({
@@ -355,9 +359,10 @@ function FrameTile({
   onClick,
   direction,
   changePct,
+  entryOnly = false,
 }: FrameTileProps) {
   const effective = direction ?? analysis.direction;
-  const label =
+  const label = entryOnly ? "Entry only" :
     effective === "BUY" ? "Bullish" :
     effective === "SELL" ? "Bearish" : "Neutral";
 
@@ -478,12 +483,11 @@ export function MarketDashboard() {
   );
   const [now, setNow] = useState(0);
   const [recentPage, setRecentPage] = useState(0);
-  const [alerted, setAlerted] = useState<
+  const [, setAlerted] = useState<
     { id: string; symbol: MarketSymbol; time: number; status: string }[]
   >([]);
   const audio = useRef<AudioContext | null>(null);
-  const previousSignal = useRef<string | null>(null);
-  const initialized = useRef(false);
+  const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
   const { feed, reload } = useMarket(symbol);
   const { guard: newsGuard } = useNewsCalendar(symbol, now);
 
@@ -492,10 +496,6 @@ export function MarketDashboard() {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
-  useEffect(() => {
-    initialized.current = false;
-    previousSignal.current = null;
-  }, [symbol]);
 
   const instrument =
     INSTRUMENTS.find((item) => item.symbol === symbol) ?? INSTRUMENTS[0];
@@ -608,35 +608,62 @@ export function MarketDashboard() {
       : quoteFresh || now - payload.fetchedAt < 120_000);
   const displayedSignal = activeSignal?.direction ?? "WAIT";
 
-  const canAlert = isLive && activeSignal !== null && now - activeSignal.openedAt < 600000;
   useEffect(() => {
-    if (!tracker.ready) return;
-    if (!initialized.current) { initialized.current = true; previousSignal.current = activeSignal?.id ?? null; return; }
-    if (!canAlert || !activeSignal || activeSignal.id === previousSignal.current) return;
-    previousSignal.current = activeSignal.id;
-    setAlerted(items => [{ id: activeSignal.id, symbol, time: activeSignal.openedAt, status: activeSignal.direction }, ...items].slice(0, 8));
-    if (audible) void audio.current?.resume().then(() => { if (audio.current) beep(audio.current); });
-  }, [canAlert, activeSignal?.id, activeSignal?.direction, activeSignal?.openedAt, symbol, audible, tracker.ready]);
+    if (!tracker.ready || !isLive || !eligibleForNewAlert(activeSignal, now, audible) || !activeSignal) return;
+    const alert = browserAlertFor(activeSignal);
+    try {
+      const recorded = parseAlertHistory(localStorage.getItem(BROWSER_ALERT_HISTORY_KEY));
+      const updated = rememberBrowserAlert(recorded, alert.id);
+      if (updated === null) return;
+      localStorage.setItem(BROWSER_ALERT_HISTORY_KEY, JSON.stringify(updated));
+    } catch {
+      return;
+    }
+    setAlerted((items) => [{ id: activeSignal.id, symbol, time: activeSignal.openedAt, status: activeSignal.direction }, ...items].slice(0, 8));
+    if (audio.current) void audio.current.resume().then(() => { if (audio.current) beep(audio.current); }).catch(() => {});
+    if (notificationSupported() && Notification.permission === "granted") {
+      void sendBrowserSignalNotification(activeSignal).then((sent) => {
+        if (!sent) setNotificationMessage("Browser notification could not be displayed. Check browser and OS settings.");
+      });
+    }
+  }, [tracker.ready, activeSignal, isLive, audible, now, symbol]);
+
+  useEffect(() => {
+    if (!audible) return;
+    if (!notificationSupported()) {
+      setNotificationMessage("Desktop notifications need HTTPS or localhost and a compatible browser.");
+    } else if (Notification.permission === "default") {
+      setNotificationMessage("Desktop notifications are not yet allowed. Turn Alerts Off, then On to grant permission.");
+    } else if (Notification.permission === "denied") {
+      setNotificationMessage("Desktop notifications are blocked. Allow this site in browser notification settings.");
+    }
+  }, [audible]);
 
   const enableAlert = async () => {
-    if (!audible) {
-      try {
-        audio.current ??= new AudioContext();
-        await audio.current.resume();
-        beep(audio.current);
-        setAudible(true);
-      } catch {
-        setAudible(false);
-      }
-    } else {
+    if (audible) {
       setAudible(false);
+      setNotificationMessage(null);
+      return;
     }
+    const permissionRequest = requestBrowserNotificationPermission();
+    setAudible(true);
+    try {
+      audio.current ??= new AudioContext();
+      await audio.current.resume();
+      beep(audio.current);
+    } catch {
+      setNotificationMessage("Sound is unavailable, but browser notifications can still be enabled.");
+    }
+    const permission = await permissionRequest;
+    if (permission === "granted") setNotificationMessage("Browser notifications enabled for new signals while this page is running.");
+    else if (permission === "denied") setNotificationMessage("Browser notifications are blocked. Allow notifications in this site's browser settings.");
+    else setNotificationMessage("Browser notifications require HTTPS or localhost and a supported browser.");
   };
 
   const frameDirection = (current: Frame) => HIGHER_FRAMES.includes(current as typeof HIGHER_FRAMES[number])
     ? setup.momentum.readings[current as typeof HIGHER_FRAMES[number]].direction
     : setup.frames[current].direction;
-  const alignmentCount = FRAMES.filter((current) => setup.bias !== "NEUTRAL" && frameDirection(current) === setup.bias).length;
+  const alignmentCount = FRAMES.filter((current) => current !== 300 && setup.bias !== "NEUTRAL" && frameDirection(current) === setup.bias).length;
   const updated = feed.checkedAt ? dateTime(feed.checkedAt) : "—";
   const signalAge = activeSignal ? Math.max(0, Math.round((now - activeSignal.openedAt) / 60000)) : null;
 
@@ -690,7 +717,7 @@ export function MarketDashboard() {
     : !newsGuard.allowed
       ? newsGuard.reason
       : pendingSignal
-      ? `Awaiting two confirmed 5m closes beyond ${price(pendingSignal.level, 4)} (${pendingSignal.direction === "BUY" ? "resistance" : "support"}).`
+      ? "Clearing an older pending breakout setup; the strategy uses two strong 5m candles and the third open."
       : setup.reason;
   const floatingReturn =
     activeSignal && sourceMatches && currentPrice !== null
@@ -749,15 +776,30 @@ export function MarketDashboard() {
               <Clock3 size={13} aria-hidden="true" />
               <span>{now ? dateTime(now) : "—"} EAT</span>
             </div>
+            <div className="mbiotraders-alert-tools">
+            <a
+              className="mbiotraders-guide-link"
+              href="/mbiotraders-signal-guide.pdf"
+              download="mbioTraders-Signal-Guide.pdf"
+              title="Download the illustrated guide to signal detection (PDF)"
+              aria-label="Download PDF: How Signals Work"
+            >
+              <BookOpen size={15} aria-hidden="true" />
+              <span>Signal Guide</span>
+              <Download size={13} aria-hidden="true" />
+            </a>
             <button
               type="button"
               className={`mbiotraders-alert-button ${audible ? "on" : ""}`}
               onClick={() => void enableAlert()}
               aria-pressed={audible}
+              title={notificationMessage ?? "Enable sound and desktop notifications for new signals"}
             >
               {audible ? <Volume2 size={17} /> : <BellOff size={17} />}
               Alerts {audible ? "On" : "Off"}
             </button>
+            </div>
+            {notificationMessage && <span className="sr-only" role="status" aria-live="polite">{notificationMessage}</span>}
           </div>
         </div>
 
@@ -949,7 +991,8 @@ export function MarketDashboard() {
                   <FrameTile
                     key={item}
                     analysis={setup.frames[item]}
-                    direction={frameDirection(item)}
+                    entryOnly={item === 300}
+                    direction={item === 300 ? "NEUTRAL" : frameDirection(item)}
                     changePct={
                       HIGHER_FRAMES.includes(item as (typeof HIGHER_FRAMES)[number])
                         ? setup.momentum.readings[
@@ -964,9 +1007,9 @@ export function MarketDashboard() {
               </div>
               <div className="mbiotraders-align-summary-box">
                 <span className="mbiotraders-align-label">{safeMomentumDays}D Momentum <Info size={13} /></span>
-                <strong>{alignmentCount}/6</strong>
-                <small>Timeframes {setup.bias === "BUY" ? "Bullish" : setup.bias === "SELL" ? "Bearish" : "Mixed"}</small>
-                <div className="mbiotraders-summary-bar"><span style={{ width: `${(alignmentCount / 6) * 100}%` }} /></div>
+                <strong>{alignmentCount}/5</strong>
+                <small>15m–1D {setup.bias === "BUY" ? "Bullish" : setup.bias === "SELL" ? "Bearish" : "Mixed"}; 5m entry only</small>
+                <div className="mbiotraders-summary-bar"><span style={{ width: `${(alignmentCount / 5) * 100}%` }} /></div>
               </div>
             </div>
           </section>
@@ -974,12 +1017,12 @@ export function MarketDashboard() {
           <section className="mbiotraders-card mbiotraders-setup-card">
             <div className="mbiotraders-card-head"><h2><ShieldCheck size={16} /> Signal Setup Details</h2></div>
             <div className="mbiotraders-checklist">
-              {[setup.criteria[1], setup.criteria[4], setup.criteria[5], setup.criteria[2], setup.criteria[6]].map((criterion) => (
+              {setup.criteria.map((criterion) => (
                 <div key={criterion.name} className="mbiotraders-check-item" title={criterion.detail}>
                   <span className={`mbiotraders-check-icon ${criterion.ok ? "ok" : "pending"}`}>
                     {criterion.ok ? <Check size={13} /> : <Clock3 size={12} />}
                   </span>
-                  <div className="mbiotraders-check-copy"><strong>{criterion.name}</strong></div>
+                  <div className="mbiotraders-check-copy"><strong>{criterion.name}</strong><small>{criterion.detail}</small></div>
                   <b className={criterion.ok ? "up" : "flat"}>
                     {criterion.ok
                       ? criterion.name.includes("trend")
@@ -997,7 +1040,7 @@ export function MarketDashboard() {
                 <span className={`mbiotraders-check-icon ${newsGuard.allowed ? "ok" : "pending"}`}>
                   {newsGuard.allowed ? <Check size={13} /> : <Clock3 size={12} />}
                 </span>
-                <div className="mbiotraders-check-copy"><strong>High-impact news window</strong></div>
+                <div className="mbiotraders-check-copy"><strong>High-impact news window</strong><small>{newsGuard.reason}</small></div>
                 <b className={newsGuard.allowed ? "up" : "flat"}>{newsGuard.allowed ? "Clear" : "Wait"}</b>
               </div>
             </div>

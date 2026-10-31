@@ -63,7 +63,7 @@ test('full real data state is deterministic at same cutoff',()=>{
   assert.deepEqual(a,b);
 });
 
-test('BUY setup only after higher trend and 5m pullback confirmation',()=>{
+test('old one-candle BUY pattern cannot activate a v31 entry',()=>{
   const anchor=1761742800,frames={};
   for(const frame of FRAMES){
     const start=Math.floor(anchor/frame)*frame-260*frame;
@@ -79,13 +79,13 @@ test('BUY setup only after higher trend and 5m pullback confirmation',()=>{
     });
   }
   const s=inspectConfluence({symbol:'XAUUSD',frames},anchor*1000);
-  assert.equal(s.status,'BUY');assert.ok(s.signalId);assert.ok(s.entry<s.target);assert.ok(s.entry>s.stop);
+  assert.equal(s.status,'WAIT');assert.equal(s.entry,null);
   
   const before=inspectConfluence({symbol:'XAUUSD',frames},(anchor-60)*1000);
   assert.equal(before.status,'WAIT');
 });
 
-test('SELL setup is symmetrical for descending trend and bullish pullback',()=>{
+test('old one-candle SELL pattern cannot activate a v31 entry',()=>{
   const anchor=1761742800,frames={};
   for(const frame of FRAMES){
     const start=Math.floor(anchor/frame)*frame-260*frame;
@@ -101,7 +101,7 @@ test('SELL setup is symmetrical for descending trend and bullish pullback',()=>{
     });
   }
   const s=inspectConfluence({symbol:'EURUSD',frames},anchor*1000);
-  assert.equal(s.status,'SELL');assert.ok(s.entry>s.target);assert.ok(s.entry<s.stop);
+  assert.equal(s.status,'WAIT');assert.equal(s.entry,null);
 });
 
 test('one public WebSocket retrieves all six timeframes by req_id',async()=>{

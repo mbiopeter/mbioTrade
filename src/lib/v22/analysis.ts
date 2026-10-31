@@ -2,6 +2,7 @@ import { adx, atr, ema, macd, rsi, sma } from "../indicators.ts";
 import type { Candle } from "../types.ts";
 import { FRAMES, FRAME_LABELS, type Frame, type FrameSeries, type MarketPayload } from "./market.ts";
 import { analyzeHigherMomentum, HIGHER_FRAMES, type MomentumDays, type MomentumSummary } from "../v231/momentum.ts";
+import { inspectFiveMinuteEntry, type FiveMinuteEntry } from "../v31/entry.ts";
 
 export type Vote = -1 | 0 | 1;
 export type Rating = "BUY" | "SELL" | "NEUTRAL";
@@ -17,7 +18,7 @@ export type Setup = {
   reason:string; signalId:string|null; time:number|null;
   entry:number|null; stop:number|null; target:number|null; rr:number;
   frames:Record<Frame,FrameAnalysis>; total:{buy:number;sell:number;neutral:number};
-  dataCurrent:boolean; ageSeconds:number|null; momentum:MomentumSummary;
+  dataCurrent:boolean; ageSeconds:number|null; momentum:MomentumSummary; fiveMinute:FiveMinuteEntry | null;
 };
 const neutralFrame = (frame:Frame):FrameAnalysis => ({frame,label:FRAME_LABELS[frame],direction:"NEUTRAL",strength:0,score:0,moving:{buy:0,sell:0,neutral:0},oscillators:{buy:0,sell:0,neutral:0},indicators:[],current:null,adx:null,rsi:null});
 const count = (votes:IndicatorVote[]) => ({buy:votes.filter(x=>x.vote===1).length,sell:votes.filter(x=>x.vote===-1).length,neutral:votes.filter(x=>x.vote===0).length});
@@ -113,73 +114,72 @@ function isContinuousTail(candles:Candle[],frame:Frame,at:number,number=6):boole
 }
 
 
+export const REQUIRED_ALIGNMENT_FRAMES = [900, 1800, 3600, 14400, 86400] as const;
+
 export function inspectConfluence(payload:Pick<MarketPayload,"symbol"|"frames">,at=Date.now(),days:MomentumDays=5):Setup {
-  const frames={} as Record<Frame,FrameAnalysis>;
-  for (const frame of FRAMES) frames[frame]=evaluateFrame(payload.frames[frame]??[],frame,at);
-  const latest=frames[300].current;
-  const ageSeconds=latest?Math.max(0,Math.floor(at/1000-latest.time-300)):null;
-  const fresh=ageSeconds!==null && ageSeconds<=15*60 && ageSeconds>=0;
-  const momentum=analyzeHigherMomentum(payload.frames,at,days);
-  const bias:Rating=momentum.bias;
-  const directionFor=(frame:Frame)=>HIGHER_FRAMES.some(f=>f===frame)
-    ? momentum.readings[frame as 3600|14400|86400].direction
+  const frames = {} as Record<Frame, FrameAnalysis>;
+  for (const frame of FRAMES) frames[frame] = evaluateFrame(payload.frames[frame] ?? [], frame, at);
+  const five = completed(payload.frames[300] ?? [], 300, at);
+  const latest = five.at(-1);
+  const ageSeconds = latest ? Math.floor(at / 1000 - latest.time - 300) : null;
+  const fresh = ageSeconds !== null && ageSeconds >= 0 && ageSeconds <= 15 * 60;
+  const validTail = isContinuousTail(payload.frames[300] ?? [], 300, at);
+  const momentum = analyzeHigherMomentum(payload.frames, at, days);
+  const bias: Rating = momentum.bias;
+  const directionFor = (frame: Frame): Rating => HIGHER_FRAMES.some((f) => f === frame)
+    ? momentum.readings[frame as 3600 | 14400 | 86400].direction
     : frames[frame].direction;
-  const aligned=bias!=="NEUTRAL" && FRAMES.every(frame=>directionFor(frame)===bias);
-  const allVotes=FRAMES.flatMap(frame=>frames[frame].indicators);
-  const total=count(allVotes);
-  const five=completed(payload.frames[300]??[],300,at),last=five.at(-1),previous=five.at(-2);
-  const sign=bias==="BUY"?1:bias==="SELL"?-1:0;
-  const closes=five.map(c=>c.close);
-  const e9=closes.length?ema(closes,9).at(-1)??NaN:NaN;
-  const vatr=five.length>20?atr(five.slice(-40),14).at(-1)??NaN:NaN;
-  const validTail=isContinuousTail(payload.frames[300]??[],300,at);
-
-  const pullback= Boolean(previous && five.slice(-5,-1).some(c=>sign*(c.close-c.open)<0));
-  const reversed=Boolean(last && previous && sign!==0 && sign*(last.close-last.open)>0 &&
-    sign*(last.close-(sign===1?previous.high:previous.low))>0 &&
-    sign*(last.close-e9)>0 &&
-    Math.abs(last.close-last.open)>=Math.max(1e-8,last.high-last.low)*.35 &&
-    Number.isFinite(vatr) && last.high-last.low<=vatr*2.8);
-  const htfStrength=frames[3600].adx!==null && frames[3600].adx!>=16;
-  const agreement=FRAMES.filter(frame=>directionFor(frame)===bias && bias!=="NEUTRAL").length;
-
-  const agreementScore=agreement/6*55;
-  const technical= (bias==="BUY"?1:bias==="SELL"?-1:0) * frames[300].score;
-  const score=Math.round(Math.min(100,agreementScore+Math.max(0,technical)*.15+(htfStrength?10:0)+(pullback?10:0)+(reversed?10:0)));
-  const criteria=[
-    {name:"Current data",ok:fresh&&validTail,detail:fresh?"Newly closed 5-minute candles are available":"History is delayed or stale"},
-    {name:`${days}-day higher momentum`,ok:bias!=="NEUTRAL",detail:!momentum.complete?`Not enough complete H1/H4/D1 history for ${days} trading days`:bias==="NEUTRAL"?"H1, H4 and D1 3–7 day slopes disagree":`${bias} momentum confirmed over ${days} completed trading sessions`},
-    {name:"Every timeframe aligned",ok:aligned,detail:`${agreement} of 6 timeframes match the higher trend`},
-    {name:"H1 trend strength",ok:htfStrength,detail:`ADX ${format(frames[3600].adx??NaN,1)}; minimum 16`},
-    {name:"Smaller chart pulled back",ok:pullback,detail:"At least one of the previous four 5-minute candles moved against the trend"},
-    {name:"5-minute reversal confirmed",ok:reversed,detail:"Closed candle broke the prior high/low with a directional body"},
-    {name:"Entry quality threshold",ok:score>=75,detail:`Confluence ${score}/100; minimum 75`},
+  const agreement = REQUIRED_ALIGNMENT_FRAMES.filter((frame) => bias !== "NEUTRAL" && directionFor(frame) === bias).length;
+  const aligned = momentum.complete && bias !== "NEUTRAL" && agreement === REQUIRED_ALIGNMENT_FRAMES.length;
+  const htfStrength = frames[3600].adx !== null && frames[3600].adx! >= 16;
+  const fiveMinute = bias === "BUY" || bias === "SELL"
+    ? inspectFiveMinuteEntry(payload.frames[300] ?? [], bias, at)
+    : null;
+  const allVotes = FRAMES.flatMap((frame) => frames[frame].indicators);
+  const total = count(allVotes);
+  const score = Math.round(Math.min(100,
+    (agreement / REQUIRED_ALIGNMENT_FRAMES.length) * 60 +
+    (htfStrength ? 10 : 0) +
+    (fiveMinute?.pullback ? 10 : 0) +
+    (fiveMinute?.twoStrong ? 15 : 0) +
+    (fiveMinute?.continuous ? 5 : 0),
+  ));
+  const supported = Boolean(fiveMinute && fiveMinute.entry !== null && fiveMinute.stop !== null &&
+    fiveMinute.target !== null && fiveMinute.risk !== null);
+  const criteria = [
+    { name: "Fresh 5m candles", ok: fresh && validTail,
+      detail: fresh && validTail ? "Closed 5-minute candles are recent and consecutive." : "Stale or gapped 5-minute history." },
+    { name: `${days}-day higher momentum`, ok: momentum.complete && bias !== "NEUTRAL",
+      detail: !momentum.complete ? `Need ${days} completed trading sessions with valid H1/H4/D1 data.` : `Higher-timeframe momentum: ${bias}.` },
+    { name: "Five higher frames aligned", ok: aligned,
+      detail: `${agreement} of 5 required charts (15m, 30m, 1H, 4H, 1D) agree; 5m is entry only.` },
+    { name: "H1 trend strength", ok: htfStrength,
+      detail: `H1 ADX ${format(frames[3600].adx ?? NaN, 1)}; minimum 16.` },
+    { name: "5m countertrend pullback", ok: Boolean(fiveMinute?.pullback),
+      detail: `A 5m candle must pull back against ${bias === "BUY" ? "bullish" : "bearish"} momentum before confirmation.` },
+    { name: "Two strong 5m candles (60%+)", ok: Boolean(fiveMinute?.twoStrong && fiveMinute.continuous),
+      detail: "Two consecutive completed candles in trend direction, each body at least 60% of full high-low range." },
+    { name: "Third-candle open + swing SL + 2R", ok: Boolean(fiveMinute?.timely && supported),
+      detail: fiveMinute?.reason ?? "Waiting for a confirmed higher-timeframe trend." },
   ];
-  const ready=criteria.every(c=>c.ok);
-  const direction: Setup["status"] = ready && bias !== "NEUTRAL" ? bias : "WAIT";
-  const stop= ready&&last&&Number.isFinite(vatr)?sign===1?
-    Math.min(...five.slice(-6).map(c=>c.low))-.15*vatr:
-    Math.max(...five.slice(-6).map(c=>c.high))+.15*vatr:null;
-  const entry=ready&&last?last.close:null;
-  const risk=entry!==null&&stop!==null?sign*(entry-stop):null;
-  const supported= risk!==null&&risk>0&&Number.isFinite(risk)&&risk < (vatr*4);
-  const finalReady=ready&&supported;
-  const target=finalReady&&entry!==null&&risk!==null?entry+sign*risk*2:null;
-  const message=finalReady?`Confirmed ${bias} reversal after a shorter-term pullback, aligned with the 1H / 4H / daily trend.`:
-    !fresh?"Waiting for a fresh completed 5-minute candle. Alerts are disabled on stale data.":
-    !validTail?"Recent five-minute candles contain gaps; confirmation is blocked.":
-    bias==="NEUTRAL"?`Higher-timeframe 1H / 4H / daily momentum has not aligned over ${days} trading days.`:
-    !aligned?"Higher trend is set, but smaller timeframes are still retracing or disagreeing.":
-    !pullback?"Trend aligned. Waiting for a real small-timeframe pullback.":
-    !reversed?"Pullback present. Waiting for a confirmed 5-minute reversal candle.":
-    !htfStrength?"H1 trend strength is too weak.":
-    !supported?"Price-based stop distance is not suitable. No signal.":
-    "Confluence score is below the required threshold.";
-  return {status:finalReady&&bias!=="NEUTRAL"?bias:"WAIT",bias,score,criteria,reason:message,
-    signalId:finalReady&&last?`${payload.symbol}-${last.time}-${bias}`:null,
-    time:finalReady&&last?(last.time+300)*1000:null,
-    entry:finalReady?entry:null,stop:finalReady?stop:null,target,
-    rr:2,frames,total,dataCurrent:fresh&&validTail,ageSeconds,momentum};
+  const ready = criteria.every((criterion) => criterion.ok);
+  const direction:Setup["status"] = ready && bias !== "NEUTRAL" ? bias : "WAIT";
+  const reason = !fresh ? "Waiting for recent completed 5-minute candles; no signal on stale data."
+    : !validTail ? "Five-minute candle history has gaps; entry is blocked."
+    : !momentum.complete || bias === "NEUTRAL" ? `H1, H4 and daily momentum are not confirmed over ${days} trading sessions.`
+    : !aligned ? `Only ${agreement}/5 required timeframes align; 5m does not vote on trend.`
+    : !htfStrength ? "H1 trend strength is below the minimum ADX 16."
+    : fiveMinute?.reason ?? "Waiting for 5m pullback and confirmation.";
+  const signalId = ready && fiveMinute?.thirdOpenTime != null
+    ? `${payload.symbol}-${fiveMinute.thirdOpenTime}-${bias}-v31` : null;
+  return {
+    status: direction, bias, score, criteria, reason, signalId,
+    time: ready && fiveMinute?.thirdOpenTime != null ? fiveMinute.thirdOpenTime * 1000 : null,
+    entry: ready ? fiveMinute?.entry ?? null : null,
+    stop: ready ? fiveMinute?.stop ?? null : null,
+    target: ready ? fiveMinute?.target ?? null : null,
+    rr: 2, frames, total, dataCurrent: fresh && validTail, ageSeconds, momentum, fiveMinute,
+  };
 }
 
 export type ReplaySignal = {id:string;time:number;direction:"BUY"|"SELL";entry:number;stop:number;target:number;outcome:"TP"|"SL"|"TIME";r:number;exitTime:number};
@@ -188,38 +188,37 @@ export function replayRecent(payload:Pick<MarketPayload,"symbol"|"frames">,max=5
   const five=payload.frames[300]??[];
   if(five.length<55)return [];
   const results:ReplaySignal[]=[];
-  const end=five.length-1;
   let lastEntry=-100;
-  for(let i=Math.max(0,end-105);i<end-24;i++) {
-    const at=(five[i].time+300)*1000;
+  for(let i=Math.max(10,five.length-107);i<five.length-25;i++) {
+    const third=five[i+1];
+    if(!third || third.time!==five[i].time+300 || i-lastEntry<12)continue;
+    const at=third.time*1000;
     const frames:FrameSeries={};
-    for(const frame of FRAMES)frames[frame]=(payload.frames[frame]??[]).filter(bar=>(bar.time+frame)*1000<=at);
+    for(const frame of FRAMES) {
+      frames[frame]=frame===300
+        ? five.slice(0,i+2).map((bar,j)=>j===i+1?{...bar,high:bar.open,low:bar.open,close:bar.open}:bar)
+        : (payload.frames[frame]??[]).filter(bar=>(bar.time+frame)*1000<=at);
+    }
     const signal=inspectConfluence({symbol:payload.symbol,frames},at,days);
-    if(signal.status==="WAIT"||!signal.signalId||signal.entry===null||signal.stop===null||signal.target===null||i-lastEntry<12)continue;
-    if(i+1>=five.length||five[i+1].time!==five[i].time+300)continue;
+    if(signal.status==="WAIT"||!signal.signalId||signal.entry===null||signal.stop===null||signal.target===null)continue;
     const sign=signal.status==="BUY"?1:-1;
-    const next=five[i+1];
-
-    const entry=next.open;
     const risk=Math.abs(signal.entry-signal.stop);
-    if(risk<=0||Math.abs(entry-signal.entry)>risk*.5)continue;
-    const stop=signal.stop,target=entry+sign*risk*2;
+    if(risk<=0)continue;
     let outcome:ReplaySignal["outcome"]|null=null;
     let exitPrice=0,exitTime=0;
     for(let j=i+1;j<=i+24;j++) {
       const bar=five[j];
       if(!bar||(j>i+1&&bar.time-five[j-1].time!==300)){outcome=null;break;}
-      const gapStop=sign*(bar.open-stop)<=0;
-      const gapTarget=sign*(bar.open-target)>=0;
-      const stopHit=sign===1?bar.low<=stop:bar.high>=stop;
-      const targetHit=sign===1?bar.high>=target:bar.low<=target;
-      if(gapStop||stopHit){outcome="SL";exitPrice=gapStop?bar.open:stop;exitTime=bar.time+300;break;}
-      if(gapTarget||targetHit){outcome="TP";exitPrice=gapTarget?target:target;exitTime=bar.time+300;break;}
+      const gapStop=sign*(bar.open-signal.stop)<=0;
+      const stopHit=sign===1?bar.low<=signal.stop:bar.high>=signal.stop;
+      const targetHit=sign===1?bar.high>=signal.target:bar.low<=signal.target;
+      if(gapStop||stopHit){outcome="SL";exitPrice=gapStop?bar.open:signal.stop;exitTime=bar.time+300;break;}
+      if(targetHit){outcome="TP";exitPrice=signal.target;exitTime=bar.time+300;break;}
       if(j===i+24){outcome="TIME";exitPrice=bar.close;exitTime=bar.time+300;}
     }
     if(!outcome)continue;
-    const r=sign*(exitPrice-entry)/risk;
-    results.push({id:signal.signalId,time:signal.time!,direction:signal.status,entry,stop,target,outcome,r,exitTime});
+    const r=sign*(exitPrice-signal.entry)/risk;
+    results.push({id:signal.signalId,time:signal.time!,direction:signal.status,entry:signal.entry,stop:signal.stop,target:signal.target,outcome,r,exitTime});
     lastEntry=i;
   }
   return results.slice(-max).reverse();

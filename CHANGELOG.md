@@ -1,5 +1,25 @@
 # Changelog
 
+## v32.0.0
+
+- Compressed all nine dashboard sections into a viewport-fit three-column layout for standard desktop resolutions without losing the full Signal Setup checklist.
+- Added a natural-height two-column tablet layout and retained one-column mobile presentation.
+- Removed visible notification status banners from the top bar while retaining real browser/OS alerts, sound, permission handling and accessible status.
+- Added a prominent Signal Guide PDF download beside Alerts; the bundled illustrated 10-page PDF has no version numbers in its visible content or metadata.
+- Preserved the v31 five-timeframe/5m signal logic, news guard, storage, 100-signal history, two-row pagination, CSV, charting and all existing functionality.
+- Updated and verified package-lock.json so `npm ci` remains usable.
+
+
+## v31.0.0
+
+- Rebuilt directly from the uploaded v30 source and preserved economic-news gating, saved signals, 100-trade history, CSV and 2-row pagination.
+- Required only 15m, 30m, 1H, 4H and 1D trend alignment, with 5m used exclusively for entries.
+- Required a 5m countertrend pullback followed by two >=60% body confirmation candles and an actual third-bar opening price.
+- Set the stop at an older confirmed 5m swing high/low and take profit at 2R; no synthetic entry or ATR-derived stop substitutes.
+- Showed the entire Signal Setup Details checklist and reason without clipping, ellipses or internal scrolling.
+- Added permission-based OS/browser notifications for new BUY/SELL signals with exact entry, SL and TP, service-worker display and duplicate suppression.
+- Included and synchronized the npm lockfile to fix the npm ci error in the earlier v31 release.
+
 ## v30.0.0
 
 - Changed Recent Signals pagination to two completed results per page.

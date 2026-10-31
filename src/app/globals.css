@@ -302,7 +302,6 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
 .mbiotraders-big-signal {
   margin: 0 16px;
   height: 48px;
-  border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.06);
   display: flex;
   align-items: center;
@@ -400,7 +399,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
   color: #6ff3bd;
   font-weight: 900;
 }
-.mbiotraders-align-summary-box small { color: #a8d4c7; font-size: 15.2px; }
+.mbiotraders-align-summary-box small { color: #a8d4c7; font-size: 16px; }
 .mbiotraders-summary-bar {
   height: 10px;
   border-radius: 999px;
@@ -437,7 +436,6 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
 .mbiotraders-conclusion {
   margin: 0 14px 14px;
   padding: 14px;
-  border-radius: 12px;
   border: 1px solid rgba(43, 221, 161, 0.25);
   background: rgba(12, 62, 52, 0.42);
   color: #caece4;
@@ -788,7 +786,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
 .mbiotraders-align-summary-box { padding: 11px 12px; justify-content: center; gap: 4px; border-radius: 9px; }
 .mbiotraders-align-label { font-size: 11.4px; white-space: nowrap; }
 .mbiotraders-align-summary-box strong { font-size: 35.1px; }
-.mbiotraders-align-summary-box small { font-size: 11px; }
+.mbiotraders-align-summary-box small { font-size: 12px; }
 .mbiotraders-summary-bar { height: 9px; margin-top: 4px; }
 .mbiotraders-align-card .mbiotraders-card-head { padding: 11px 13px 9px; }
 .mbiotraders-momentum-tabs { display: inline-flex; align-items: center; gap: 3px; }
@@ -839,7 +837,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
 @media (min-width: 1200px) {
   .mbiotraders-grid {
     grid-template-columns: minmax(0,2.55fr) minmax(0,1.27fr) minmax(0,1fr);
-    grid-template-rows: 380px 86px 166px 190px;
+    grid-template-rows: minmax(380px, auto) minmax(86px, auto) minmax(166px, auto) minmax(190px, auto);
     grid-template-areas:
       "chart gauge signal"
       "chart setup levels"
@@ -851,7 +849,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
   .mbiotraders-gauge-card { grid-area: gauge; }
   .mbiotraders-signal-card { grid-area: signal; }
   .mbiotraders-align-card { grid-area: align; }
-  .mbiotraders-setup-card { grid-area: setup; position: relative; z-index: 1; width: calc(100% + 35px); overflow-y:auto;}
+  .mbiotraders-setup-card { grid-area: setup; position: relative; z-index: 1; width: calc(100% + 35px); }
   .mbiotraders-levels-card { grid-area: levels; margin-left: 35px; }
   .mbiotraders-tech-card { grid-area: tech; margin-right: 25px; }
   .mbiotraders-recent-card { grid-area: recent; margin-left: -25px; }
@@ -897,9 +895,10 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
 .mbiotraders-gauge-labels {
   pointer-events: none;
   position: absolute;
-  inset: auto 1px 0;
+  inset: auto 22px 0px;
+  transform: translateY(10px);
   display: grid;
-  grid-template-columns: 1.05fr  1.05fr;
+  grid-template-columns: 1.05fr 1.05fr;
   align-items: end;
   gap: 1px;
   color: #a3bbc1;
@@ -1643,7 +1642,6 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
   padding: 10px 11px;
   border: 1px solid rgba(35, 116, 93, 0.45);
   background: rgba(7, 40, 37, 0.45);
-  border-radius: 9px;
   color: #b7d4cf;
 }
 
@@ -1705,4 +1703,348 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
   .mbiotraders-recent-pagination {
     margin-bottom: 20px;
   }
+}
+
+.mbiotraders-setup-card {
+  height: auto;
+  min-height: max-content;
+  overflow: visible;
+}
+.mbiotraders-setup-card .mbiotraders-card-head {
+  height: auto;
+  min-height: 45px;
+}
+.mbiotraders-setup-card .mbiotraders-checklist {
+  padding: 0 12px 9px;
+  overflow: visible;
+  max-height: none;
+}
+.mbiotraders-setup-card .mbiotraders-check-item {
+  height: auto;
+  min-height: 42px;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: start;
+  padding: 6px 0;
+  gap: 8px;
+}
+.mbiotraders-setup-card .mbiotraders-check-icon {
+  margin-top: 2px;
+}
+.mbiotraders-setup-card .mbiotraders-check-copy {
+  min-width: 0;
+  overflow: visible;
+}
+.mbiotraders-setup-card .mbiotraders-check-copy strong,
+.mbiotraders-setup-card .mbiotraders-check-copy small {
+  display: block;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+.mbiotraders-setup-card .mbiotraders-check-copy strong {
+  font-size: 11px;
+}
+.mbiotraders-setup-card .mbiotraders-check-copy small {
+  margin: 2px 0 0;
+  color: #94adb6;
+  font-size: 10px;
+}
+.mbiotraders-setup-card .mbiotraders-check-item > b {
+  margin-top: 4px;
+  font-size: 10px;
+}
+.mbiotraders-setup-card .mbiotraders-conclusion {
+  height: auto;
+  min-height: 47px;
+  max-height: none;
+  overflow: visible;
+  align-items: start;
+  grid-template-columns: 70px minmax(0, 1fr);
+  overflow-wrap: anywhere;
+}
+.mbiotraders-setup-card .mbiotraders-conclusion span {
+  white-space: normal;
+  overflow: visible;
+}
+.mbiotraders-notification-status {
+  flex-basis: 100%;
+  max-width: 280px;
+  color: #a3e9cc;
+  font-size: 10px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .mbiotraders-setup-card .mbiotraders-conclusion {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  .mbiotraders-notification-status {
+    max-width: 100%;
+  }
+}
+
+.mbiotraders-header-actions {
+  flex-wrap: wrap;
+}
+@media (max-width: 780px) {
+  .mbiotraders-topbar-primary {
+    grid-template-areas:
+      "brand alerts"
+      "feed feed"
+      "context context"
+      "notif notif";
+  }
+  .mbiotraders-notification-status {
+    grid-area: notif;
+    justify-self: stretch;
+    max-width: 100%;
+  }
+}
+
+
+
+.mbiotraders-guide-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 33px;
+  padding: 0 10px;
+  border: 1px solid #276456;
+  border-radius: 9px;
+  background: rgba(18, 90, 77, .25);
+  color: #8de9c8;
+  font-size: 10.5px;
+  font-weight: 750;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.mbiotraders-guide-link:hover, .mbiotraders-guide-link:focus-visible {
+  color: #eafff5;
+  background: rgba(31, 114, 91, .45);
+  border-color: #43ca9d;
+}
+
+
+@media (min-width: 1200px) {
+  .mbiotraders-page { padding: 7px 10px 7px; }
+  .mbiotraders-topbar { margin-bottom: 7px; padding: 6px 10px 6px; border-radius: 10px; }
+  .mbiotraders-topbar-primary { min-height: 37px; padding-bottom: 6px; }
+  .mbiotraders-topbar-secondary { padding-top: 6px; gap: 7px; }
+  .mbiotraders-topbar .mbiotraders-symbol-tab,
+  .mbiotraders-topbar .mbiotraders-timeframe-tab { min-height: 28px; height: 28px; padding-inline: 8px; }
+  .mbiotraders-brand-icon { width: 32px; height: 32px; }
+  .mbiotraders-brand-copy h1 { font-size: 20px; }
+  .mbiotraders-header-actions { gap: 9px; flex-wrap: nowrap; }
+  .mbiotraders-topbar-clock { padding: 5px 7px; }
+  .mbiotraders-grid {
+    grid-template-columns: minmax(0, 2.35fr) minmax(0, 1.24fr) minmax(0, 1.08fr);
+    grid-template-areas:
+      "chart gauge signal"
+      "chart setup signal"
+      "align setup levels"
+      "tech recent stats";
+    grid-template-rows: minmax(0, 1.2fr) minmax(0, 1.12fr) minmax(0, .91fr) minmax(0, .84fr);
+    gap: 7px;
+  }
+  
+  .mbiotraders-setup-card { grid-area: setup; width: auto; min-height: 0; z-index: auto; }
+  .mbiotraders-signal-card { grid-area: signal; }
+  .mbiotraders-levels-card { grid-area: levels; margin-left: 0; }
+  .mbiotraders-tech-card { grid-area: tech; margin-right: 0; }
+  .mbiotraders-recent-card { grid-area: recent; margin-left: 0; }
+  .mbiotraders-chart-card { grid-area: chart; min-height: 0; }
+  .mbiotraders-gauge-card { grid-area: gauge; min-height: 0; }
+  .mbiotraders-align-card { grid-area: align; }
+  .mbiotraders-stats-card { grid-area: stats; }
+  .mbiotraders-card-head { padding: 8px 10px 5px; }
+  .mbiotraders-card-head h2 { font-size: 12px; letter-spacing: -.15px; }
+  .mbiotraders-card-head h2 svg { width: 14px; height: 14px; }
+  .mbiotraders-gauge-card .mbiotraders-card-head,
+  .mbiotraders-signal-card .mbiotraders-card-head,
+  .mbiotraders-setup-card .mbiotraders-card-head,
+  .mbiotraders-levels-card .mbiotraders-card-head { min-height: 0; height: auto; padding: 9px 10px 5px; }
+  .mbiotraders-chart-head { height: 33px; padding: 7px 9px 0; }
+  .mbiotraders-chart-title { font-size: 13px; }
+  .mbiotraders-chart-price-row { gap: 5px; font-size: 9.5px; }
+  .mbiotraders-chart-price-row strong, .mbiotraders-chart-price-row span:last-child { font-size: 9.4px; }
+  .mbiotraders-chart-overlays { top: 38px; left: 0; padding: 0 9px; gap: 3px; font-size: 10px; }
+  .mbiotraders-chart-overlays span { font-size: 10px; }
+  .mbiotraders-gauge-widget { width: min(100%, 275px); height: 106px; margin: 0 auto -7px; }
+  .mbiotraders-gauge-wrap { padding: 0 9px 0; }
+  .mbiotraders-gauge-labels { bottom: -2px; font-size: 8.8px; }
+  .mbiotraders-gauge-card .mbiotraders-gauge-badge { min-width: 90px; height: 23px; margin-top: 0; font-size: 11px; border-radius: 7px; }
+  .mbiotraders-gauge-card .mbiotraders-gauge-counts { margin-top: 5px; gap: 3px; }
+  .mbiotraders-gauge-counts div span { font-size: 9px; margin-bottom: 0; }
+  .mbiotraders-gauge-counts div strong { font-size: 13px; }
+  .mbiotraders-gauge-foot { margin: 2px 0 3px; font-size: 8.5px; }
+  .mbiotraders-big-signal { height: 32px; margin: 3px 10px 4px; font-size: 13px; }
+  .mbiotraders-big-signal svg { width: 16px; height: 16px; }
+  .mbiotraders-signal-section { padding: 3px 10px 7px; }
+  .mbiotraders-row-between { font-size: 10px; }
+  .mbiotraders-row-between strong { font-size: 14px; }
+  .mbiotraders-confidence-bar { height: 5px; margin-top: 4px; }
+  .mbiotraders-details-list { padding: 0 10px 5px; }
+  .mbiotraders-details-list.compact div { padding: 4px 0; gap: 4px; }
+  .mbiotraders-details-list span, .mbiotraders-details-list strong { font-size: 9.8px; }
+  .mbiotraders-tracking-note { padding: 1px 10px 5px; font-size: 9.5px; }
+  .mbiotraders-news-guard { margin: 0 9px 5px; padding: 5px 7px; }
+  .mbiotraders-news-guard-heading { gap: 4px; font-size: 9px; }
+  .mbiotraders-news-guard-heading svg { width: 12px; height: 12px; }
+  .mbiotraders-news-guard-heading span { font-size: 8px; }
+  .mbiotraders-news-guard p { margin: 3px 0; font-size: 9px; line-height: 1.2; overflow-wrap: anywhere; }
+  .mbiotraders-news-guard small { margin: 0 0 3px; font-size: 8.6px; line-height: 1.2; overflow-wrap: anywhere; }
+  .mbiotraders-news-guard a { font-size: 8.6px; }
+  .mbiotraders-setup-card .mbiotraders-checklist { padding: 0 8px 2px; }
+  .mbiotraders-setup-card .mbiotraders-check-item {
+    min-height: 0; height: auto; padding: 3px 0; gap: 5px;
+    grid-template-columns: 15px minmax(0, 1fr) auto; align-items: center;
+  }
+  .mbiotraders-setup-card .mbiotraders-check-icon { margin-top: 0; width: 14px; height: 14px; }
+  .mbiotraders-setup-card .mbiotraders-check-icon svg { width: 10px; height: 10px; }
+  .mbiotraders-setup-card .mbiotraders-check-copy strong { font-size: 9.3px; line-height: 1.12; }
+  .mbiotraders-setup-card .mbiotraders-check-copy small { margin-top: 1px; font-size: 8.5px; line-height: 1.15; }
+  .mbiotraders-setup-card .mbiotraders-check-item > b { font-size: 8.5px; margin-top: 0; }
+  .mbiotraders-setup-card .mbiotraders-conclusion {
+    margin: 3px 8px 5px; padding: 5px 6px; min-height: 0; gap: 4px;
+    grid-template-columns: 58px minmax(0,1fr); font-size: 9px; align-items: start;
+  }
+  .mbiotraders-setup-card .mbiotraders-conclusion span { font-size: 8.9px; line-height: 1.2; }
+  .mbiotraders-levels-list { padding: 0 7px 5px; }
+  .mbiotraders-levels-list div { height: auto; min-height: 22px; padding: 3px 6px 3px 8px; gap: 4px; }
+  .mbiotraders-levels-list span, .mbiotraders-levels-list strong { font-size: 10px; }
+  .mbiotraders-align-card .mbiotraders-card-head { padding: 7px 9px 4px; }
+  .mbiotraders-align-content { grid-template-columns: minmax(0,1fr) 120px; padding: 0 7px 7px; gap: 6px; }
+  .mbiotraders-frame-grid { grid-template-columns: repeat(6,minmax(0,1fr)); gap: 4px; }
+  .mbiotraders-frame-tile { min-height: 0; padding: 4px 2px; gap: 1px; }
+  .mbiotraders-frame-time, .mbiotraders-frame-text { font-size: 9px; }
+  .mbiotraders-frame-dir svg { width: 18px; height: 18px; }
+  .mbiotraders-momentum-change { font-size: 7.5px; }
+  .mbiotraders-align-summary-box { padding: 5px 7px; gap: 2px; }
+  .mbiotraders-align-summary-box strong { font-size: 22px; }
+  .mbiotraders-align-label, .mbiotraders-align-summary-box small { font-size: 8px; white-space: normal; }
+  .mbiotraders-summary-bar { height: 4px; margin-top: 0; }
+  .mbiotraders-momentum-tabs button { height: 19px; min-width: 23px; font-size: 8.5px; }
+  .mbiotraders-tech-card .mbiotraders-card-head,
+  .mbiotraders-recent-card .mbiotraders-card-head,
+  .mbiotraders-stats-card .mbiotraders-card-head { padding: 7px 9px 4px; }
+  .mbiotraders-indicator-grid { grid-template-columns: repeat(3,minmax(0,1fr)); grid-template-rows: repeat(3,minmax(0,1fr)); gap: 0 4px; padding: 0 7px 5px; }
+  .mbiotraders-indicator-card { height: auto; min-height: 0; padding: 1px 2px; grid-template-columns: 17px minmax(0,1fr); gap: 3px; }
+  .mbiotraders-mini-graphic { width: 16px; height: 18px; }
+  .mbiotraders-indicator-copy strong { font-size: 9px; }
+  .mbiotraders-pill { font-size: 8px; height: 20px; min-width: 34px; padding-inline: 3px; }
+  .mbiotraders-recent-table { padding: 0 7px 0; }
+  .mbiotraders-recent-card .mbiotraders-table-head,
+  .mbiotraders-recent-card .mbiotraders-table-row { padding: 3px 4px; gap: 3px; font-size: 8.8px; min-height: 0; }
+  .mbiotraders-recent-pagination { gap: 3px; padding: 4px 4px; margin: 0 6px 4px; font-size: 8.5px; }
+  .mbiotraders-recent-page-controls { gap: 4px; }
+  .mbiotraders-recent-page-controls button { padding: 4px 5px; font-size: 8.5px; }
+  .mbiotraders-export-button { padding: 4px 6px; font-size: 9px; }
+  .mbiotraders-stats-grid { grid-template-columns: 76px minmax(0,1fr); gap: 7px; padding: 2px 7px 6px; }
+  .mbiotraders-win-dial { width: 76px; height: 76px; }
+  .mbiotraders-win-dial>div { width: 60px; height: 60px; }
+  .mbiotraders-win-dial strong { font-size: 16px; }
+  .mbiotraders-win-dial span { font-size: 8px; }
+  .mbiotraders-stats-list { gap: 3px; }
+  .mbiotraders-stats-list div, .mbiotraders-stats-list strong { font-size: 9px; }
+}
+
+
+@media (min-width: 1200px) and (min-height: 700px) {
+  .mbiotraders-page { height: 100dvh; min-height: 0; display: flex; flex-direction: column; }
+  .mbiotraders-topbar { flex: none; }
+  .mbiotraders-grid { flex: 1 1 auto; min-height: 0; }
+  .mbiotraders-card { min-height: 0; }
+  .mbiotraders-chart-card .mbiotraders-chart-layer { min-height: 0; }
+  .mbiotraders-skeleton-grid { min-height: 0; }
+}
+
+
+@media (min-width: 761px) and (max-width: 1199px) {
+  .mbiotraders-page { padding: 9px 10px 15px; }
+  .mbiotraders-grid {
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    grid-template-areas:
+      "chart chart"
+      "gauge signal"
+      "align align"
+      "setup levels"
+      "tech tech"
+      "recent stats";
+    grid-template-rows: auto;
+    gap: 9px;
+  }
+  .mbiotraders-chart-card { min-height: 425px; }
+  .mbiotraders-gauge-card { min-height: 0; }
+  .mbiotraders-setup-card { width: auto; }
+  .mbiotraders-levels-card { margin-left: 0; }
+  .mbiotraders-tech-card { margin-right: 0; }
+  .mbiotraders-recent-card { margin-left: 0; }
+  .mbiotraders-align-content { grid-template-columns: minmax(0,1fr) 156px; }
+  .mbiotraders-frame-grid { grid-template-columns: repeat(6,minmax(0,1fr)); }
+  .mbiotraders-frame-tile { min-height: 87px; }
+  .mbiotraders-indicator-grid { grid-template-columns: repeat(3,minmax(0,1fr)); grid-template-rows: auto; }
+  .mbiotraders-header-actions { gap: 8px; flex-wrap: nowrap; }
+  .mbiotraders-notification-status { display: none; }
+}
+
+
+@media (max-width: 760px) {
+  .mbiotraders-grid {
+    grid-template-columns: minmax(0,1fr);
+    grid-template-areas: "chart" "gauge" "signal" "align" "setup" "levels" "tech" "recent" "stats";
+    grid-template-rows: auto;
+  }
+  .mbiotraders-guide-link { min-height: 34px; padding-inline: 7px; gap: 4px; }
+  .mbiotraders-guide-link span { font-size: 0; }
+  .mbiotraders-guide-link span::after { content: "Guide"; font-size: 11px; }
+  .mbiotraders-align-content { grid-template-columns: 1fr; }
+  .mbiotraders-frame-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+
+@media (min-width: 1200px) and (max-height: 850px) {
+  .mbiotraders-gauge-widget { height: clamp(65px, 9.8dvh, 83px); margin-bottom: -7px; }
+  .mbiotraders-gauge-card .mbiotraders-gauge-counts { margin-top: 3px; }
+  .mbiotraders-gauge-card .mbiotraders-gauge-badge { height: 21px; }
+  .mbiotraders-gauge-foot { margin-block: 0; }
+  .mbiotraders-details-list.compact div { padding: 3px 0; }
+  .mbiotraders-signal-section { padding-bottom: 5px; }
+  .mbiotraders-news-guard { margin-bottom: 3px; padding-block: 4px; }
+  .mbiotraders-news-guard p { margin-block: 2px; }
+  .mbiotraders-setup-card .mbiotraders-check-item { padding: 1px 0; }
+  .mbiotraders-setup-card .mbiotraders-check-copy strong { font-size: 9px; line-height: 1.06; }
+  .mbiotraders-setup-card .mbiotraders-check-copy small { font-size: 8.2px; line-height: 1.1; }
+  .mbiotraders-setup-card .mbiotraders-conclusion { padding-block: 4px; margin-block: 2px 4px; }
+  .mbiotraders-setup-card .mbiotraders-conclusion span { font-size: 8.5px; line-height: 1.12; }
+  .mbiotraders-levels-list div { min-height: 19px; padding-block: 2px; }
+  .mbiotraders-recent-pagination { padding-block: 3px; }
+}
+
+.mbiotraders-alert-tools { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+@media (max-width: 780px) {
+  .mbiotraders-alert-tools { grid-area: alerts; justify-self: end; gap: 5px; }
+  .mbiotraders-topbar-primary .mbiotraders-alert-button { grid-area: auto; }
+}
+@media (max-width: 420px) {
+  .mbiotraders-guide-link { padding-inline: 8px; }
+  .mbiotraders-guide-link span { display: none; }
+  .mbiotraders-guide-link svg:last-child { display: none; }
+}
+
+@media (min-width: 1200px) and (max-height: 730px) {
+  .mbiotraders-details-list.compact div { padding: 2px 0; }
+  .mbiotraders-news-guard { padding-block: 3px; }
+  .mbiotraders-levels-list div { min-height: 18px; padding-block: 1px; }
+  .mbiotraders-recent-pagination { padding-block: 2px; margin-bottom: 2px; }
+  .mbiotraders-recent-card .mbiotraders-table-row { padding-block: 2px; }
+}
+
+@media (min-width: 761px) and (max-width: 1199px) {
+  .mbiotraders-gauge-card { display: flex; flex-direction: column; }
+  .mbiotraders-gauge-card .mbiotraders-gauge-wrap { margin-block: auto; }
+  .mbiotraders-gauge-card .mbiotraders-gauge-foot { margin-bottom: 12px; }
 }

@@ -1,8 +1,8 @@
 {
-  "name": "mbiotraders-v30",
-  "version": "30.0.0",
+  "name": "mbiotraders-v32",
+  "version": "32.0.0",
   "private": true,
-  "description": "mbioTraders v29 \u2014 recent signals with 100 globally retained outcomes, three-row pagination and CSV export; all v28 dashboard and signal features preserved.",
+  "description": "mbioTraders v32: compact viewport-fit desktop dashboard, two-column tablet layout, downloadable illustrated signal guide without version numbers; retains all v31 trading and browser-alert logic.",
   "engines": {
     "node": ">=22.16.0"
   },

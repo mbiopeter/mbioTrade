@@ -40,8 +40,8 @@ export function StrengthGauge({ analysis, score }: { analysis: FrameAnalysis; sc
           minValue={-100}
           maxValue={100}
           arc={{
-            padding: 0.017,
-            width: 0.17,
+            padding: 0.020,
+            width: 0.20,
             cornerRadius: 8,
             subArcs: [...SEGMENTS],
           }}
@@ -49,7 +49,7 @@ export function StrengthGauge({ analysis, score }: { analysis: FrameAnalysis; sc
             type: "needle",
             color: "#e7f2ed",
             baseColor: "#30d68e",
-            length: 0.73,
+            length: 0.80,
             width: 8,
             elastic: false,
             animate: true,
