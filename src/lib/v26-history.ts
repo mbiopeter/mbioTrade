@@ -144,6 +144,7 @@ export function derivPage(
             granularity: frame,
             count: Math.min(4_000, count),
             end: before - 1,
+            adjust_start_time: 1,
             req_id: 2601,
           }),
         );

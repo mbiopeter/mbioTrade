@@ -152,6 +152,18 @@ export async function fetchNewsSnapshot(
   return parseNewsSnapshot(data, Date.now(), from, to);
 }
 
+export function isFreshNewsSnapshot(
+  snapshot: NewsSnapshot | null,
+  now: number,
+  maxAgeMs = NEWS_MAX_AGE_MS,
+): snapshot is NewsSnapshot {
+  return !!snapshot &&
+    Number.isFinite(now) &&
+    now >= snapshot.fetchedAt &&
+    now - snapshot.fetchedAt <= Math.min(NEWS_MAX_AGE_MS, Math.max(0, maxAgeMs)) &&
+    now >= snapshot.from && now < snapshot.to;
+}
+
 export function evaluateNewsGuard(
   snapshot: NewsSnapshot | null,
   symbol: MarketSymbol,

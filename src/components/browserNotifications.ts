@@ -26,7 +26,7 @@ export async function sendBrowserSignalNotification(signal: TrackedSignal): Prom
       await registration.showNotification(alert.title, {
         body: alert.body,
         tag: alert.tag,
-        icon: "/icon.svg",
+        icon: "/icons/icon-192.png",
         data: { url: alert.url },
       });
       return true;
@@ -37,7 +37,7 @@ export async function sendBrowserSignalNotification(signal: TrackedSignal): Prom
     const notice = new Notification(alert.title, {
       body: alert.body,
       tag: alert.tag,
-      icon: "/icon.svg",
+      icon: "/icons/icon-192.png",
     });
     notice.onclick = () => { window.focus(); notice.close(); };
     return true;

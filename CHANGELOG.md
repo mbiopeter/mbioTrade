@@ -1,3 +1,10 @@
+## 34.0.0 — Clean setup checklist and installable web app
+
+- Larger, single-line-first Signal Setup condition labels without explanatory text, retaining Yes/Wait/Clear statuses.
+- Desktop/mobile Install App control, native prompt where supported, and platform-specific manual installation instructions.
+- Next.js App Router PWA manifest, installable icons, offline page, and unified service worker preserving existing notification handling.
+- All live market and economic-news API requests bypass offline caching; existing trading logic and provider fixes unchanged.
+
 # Changelog
 
 ## v33.0.0

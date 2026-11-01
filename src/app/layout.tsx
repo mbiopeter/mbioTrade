@@ -1,7 +1,7 @@
 import "@fontsource-variable/dm-sans";
 import "@fontsource-variable/manrope";
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { SITE_DESCRIPTION, SITE_NAME, siteOrigin } from "@/lib/seo";
 
@@ -19,7 +19,8 @@ export const metadata: Metadata = {
     "technical indicators", "forex dashboard",
   ],
   alternates: { canonical: "/" },
-  icons: { icon: "/icon.svg" },
+  icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }], apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }] },
+  appleWebApp: { capable: true, title: "mbioTraders", statusBarStyle: "black-translucent" },
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -40,6 +41,8 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
   },
 };
+
+export const viewport: Viewport = { themeColor: "#03111a", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return <html lang="en"><body>{children}</body></html>;

@@ -2140,3 +2140,142 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
     grid-template-columns: minmax(0, 2.00fr) minmax(0, 1.60fr) minmax(0, 1.07fr);
   }
 }
+
+.mbiotraders-install-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 33px;
+  min-height: 33px;
+  padding: 0 11px;
+  border: 1px solid #23856b;
+  border-radius: 9px;
+  background: linear-gradient(145deg, #145b4c, #0c3b37);
+  color: #d5fff1;
+  font-size: 10.8px;
+  font-weight: 850;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.mbiotraders-install-button:hover { border-color: #3ae4aa; background: #185e4c; }
+.mbiotraders-install-button.installed { border-color: #395960; background: #0a2731; color: #a5e6c7; }
+.mbiotraders-install-button:disabled { opacity: 0.7; cursor: progress; }
+.mbiotraders-install-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 11, 18, .84);
+  backdrop-filter: blur(8px);
+}
+.mbiotraders-install-dialog {
+  position: relative;
+  width: min(100%, 480px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 27px;
+  border-radius: 19px;
+  border: 1px solid #2b7165;
+  background: linear-gradient(160deg, #0d2933, #061823);
+  box-shadow: 0 25px 85px rgba(0, 0, 0, .6);
+  color: #e8f4f0;
+}
+.mbiotraders-install-close {
+  position: absolute;
+  right: 13px;
+  top: 13px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #35575c;
+  border-radius: 9px;
+  background: #122e36;
+  color: #d2e4e6;
+}
+.mbiotraders-install-emblem { display: grid; place-items: center; width: 50px; height: 50px; color: #b3ffdb; background: #15533e; border-radius: 15px; }
+.mbiotraders-install-dialog h2 { margin: 15px 0 8px; font-size: 23px; font-weight: 850; }
+.mbiotraders-install-dialog p { color: #b7d1d0; font-size: 14px; line-height: 1.55; }
+.mbiotraders-install-dialog ol { margin: 12px 0 16px; padding-left: 23px; color: #e3f2ee; }
+.mbiotraders-install-dialog li { margin-bottom: 11px; padding-left: 5px; line-height: 1.5; font-size: 14px; }
+.mbiotraders-install-dialog li svg { vertical-align: middle; }
+.mbiotraders-install-dialog .mbiotraders-install-caveat { border-top: 1px solid #284f55; padding-top: 13px; color: #94b8b7; font-size: 12px; }
+.mbiotraders-install-done { width: 100%; margin-top: 9px; border: 0; border-radius: 11px; background: #24dda0; padding: 11px; color: #03251d; font-weight: 850; }
+
+.mbiotraders-setup-card .mbiotraders-checklist { padding: 2px 11px 5px; }
+.mbiotraders-setup-card .mbiotraders-check-item {
+  min-height: 30px;
+  padding: 5px 0;
+  gap: 9px;
+  grid-template-columns: 19px minmax(0,1fr) auto;
+  align-items: center;
+  border-bottom: 1px solid rgba(77, 129, 129, .13);
+}
+.mbiotraders-setup-card .mbiotraders-check-item:last-child { border-bottom: 0; }
+.mbiotraders-setup-card .mbiotraders-check-icon { width: 19px; height: 19px; margin: 0; }
+.mbiotraders-setup-card .mbiotraders-check-icon svg { width: 12px; height: 12px; }
+.mbiotraders-setup-card .mbiotraders-check-copy strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 780;
+  line-height: 1.23;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+.mbiotraders-setup-card .mbiotraders-check-copy small { display: none; }
+.mbiotraders-setup-card .mbiotraders-check-item > b { font-size: 12px; margin: 0; }
+.mbiotraders-setup-card .mbiotraders-conclusion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 34px;
+  padding: 7px 10px;
+  margin: 5px 11px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+.mbiotraders-setup-card .mbiotraders-conclusion span { margin: 0; font-size: 12.5px; font-weight: 750; }
+.mbiotraders-setup-card .mbiotraders-conclusion strong { font-size: 13px; font-weight: 850; }
+
+@media (min-width: 1200px) {
+  .mbiotraders-setup-card .mbiotraders-checklist { padding: 2px 9px 4px; }
+  .mbiotraders-setup-card .mbiotraders-check-item { min-height: 28px; padding: 3px 0; gap: 6px; grid-template-columns: 17px minmax(0,1fr) auto; }
+  .mbiotraders-setup-card .mbiotraders-check-icon { width: 17px; height: 17px; }
+  .mbiotraders-setup-card .mbiotraders-check-copy strong { font-size: 12.6px; line-height: 1.17; }
+  .mbiotraders-setup-card .mbiotraders-check-item > b { font-size: 11.5px; }
+  .mbiotraders-setup-card .mbiotraders-conclusion { margin: 5px 9px 7px; padding: 6px 8px; min-height: 30px; }
+  .mbiotraders-setup-card .mbiotraders-conclusion span,
+  .mbiotraders-setup-card .mbiotraders-conclusion strong { font-size: 12.3px; }
+}
+@media (min-width: 1400px) {
+  .mbiotraders-setup-card .mbiotraders-check-copy strong { font-size: 14px; }
+  .mbiotraders-setup-card .mbiotraders-check-item { min-height: 30px; }
+}
+@media (min-width: 1200px) and (max-height: 740px) {
+  .mbiotraders-setup-card .mbiotraders-check-item { min-height: 24px; padding: 2px 0; }
+  .mbiotraders-setup-card .mbiotraders-check-copy strong { font-size: 12.1px; }
+  .mbiotraders-setup-card .mbiotraders-conclusion { min-height: 26px; padding-block: 4px; margin-block: 3px; }
+}
+@media (max-width: 780px) {
+  .mbiotraders-topbar-primary {
+    grid-template-areas: "brand brand" "alerts alerts" "feed feed" "context context";
+    row-gap: 8px;
+  }
+  .mbiotraders-alert-tools { justify-self: stretch; justify-content: flex-end; flex-wrap: wrap; }
+  .mbiotraders-install-button { min-height: 36px; height: 36px; }
+}
+@media (max-width: 480px) {
+  .mbiotraders-alert-tools { justify-content: space-between; gap: 6px; }
+  .mbiotraders-install-button { padding: 0 9px; font-size: 10.5px; }
+  .mbiotraders-topbar-primary .mbiotraders-alert-button { padding-inline: 8px; }
+  .mbiotraders-setup-card .mbiotraders-check-copy strong { font-size: 14.5px; }
+  .mbiotraders-setup-card .mbiotraders-check-item > b { font-size: 12.5px; }
+  .mbiotraders-install-dialog { padding: 24px 19px; }
+}

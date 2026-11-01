@@ -66,3 +66,46 @@ The server-side key must **never** be exposed to the browser. Provider limitatio
 Run `npm test` for the full regression suite, including v32 layout and PDF checks and v33 BTCUSD provider, ledger, news and typography checks. `npm run doctor` confirms required files, the App Router error boundary and a matching lockfile. The production build was **not verifiable in the release environment** because its npm registry was unreachable; run `npm ci && npm run check && npm run build` on your computer before deploying.
 
 See `docs/V33-RELEASE.md` for v33 changes, `docs/V32-RELEASE.md` for the retained layout, and `docs/V31-RELEASE.md` for original signal-logic details and limitations. This is a **signal-only tool**, not an order execution system, and does not guarantee profitable trades.
+
+
+## Runtime data feed diagnostics
+
+A successful `npm run build` confirms that the application compiles; a `503` on `/api/market` is a separate upstream market-data problem. Open `http://localhost:3000/api/market?symbol=XAUUSD` and inspect its JSON `detail` for the exact provider failure. Gold and forex use Twelve Data when `TWELVE_DATA_API_KEY` is set in `.env.local`; otherwise they fall back to public Deriv WebSockets. Closed markets may not have fresh live quotes; the historical fetch uses Deriv's documented `adjust_start_time: 1`, but signals will remain paused when data is stale or missing. BTCUSD uses Kraken separately and trades 24/7. The calendar route reuses a previously verified successful snapshot only for its existing four-minute freshness window. After that, it returns 503, and new signals are blocked rather than guessing news conditions.
+
+## v34 — Clean Signal Setup and Installable App
+
+mbioTraders now supports installation as a Progressive Web App (PWA). The dashboard keeps the v33 Gold, five forex pairs, BTCUSD, 5m two-candle entries, news safety gate, signal history, browser notifications, charts and mobile/tablet layouts. The Signal Setup Details card shows only conditions, their Yes/Wait/Clear outcomes and a short overall setup status; the underlying analysis criteria and news guard are unchanged.
+
+### Install on desktop
+
+Deploy the project to HTTPS (or use `http://localhost:3000` while developing). Open the dashboard in Chrome or Edge and select **Install App** in the header. When the browser offers a native install prompt, confirm. If the prompt is not available, use the browser's install icon in the address bar or its menu. Launch the installed app from the computer's app launcher.
+
+### Install on Android
+
+Open the HTTPS site in Chrome or Samsung Internet and select **Install App**. If the browser offers a native prompt, confirm. If not, open the browser's menu and choose **Install app** or **Add to Home screen**. The installed app appears in the phone's launcher.
+
+### Install on iPhone or iPad
+
+Open the HTTPS dashboard and select **Install App** to see the instructions. In the browser, tap **Share**, choose **Add to Home Screen**, then **Add**. Launch mbioTraders from its home screen icon. iOS does not support the website-triggered `beforeinstallprompt` install dialog.
+
+### Important safety limits
+
+- The app opens in its own standalone window without the usual browser tabs. It still requires internet access to verify live market data, check economic news and evaluate signals.
+- Offline navigation displays an explicit **You are offline** page, not old or manufactured market quotes. The service worker never caches `/api/market`, `/api/market/history` or `/api/news-calendar` responses.
+- The existing signal notification behavior is preserved. Alerts must be enabled, notifications must be permitted, and the app must be open for client-side signal detection. Installing the app does **not** add background signal scanning or server-side push after it is closed.
+- Install buttons and browser install prompts depend on browser/platform support. Desktop Firefox does not currently support manifest-based installation.
+
+### Start locally
+
+Use Node.js 24.x:
+
+```bash
+npm ci
+npm run doctor
+npm test
+npm run check
+npm run build
+npm run dev
+```
+
+The unified service worker remains at `/notification-sw.js` to preserve the existing notification registration path. The App Router automatically exposes `/manifest.webmanifest` from `src/app/manifest.ts`. Never deploy the app behind a path prefix without updating the manifest scope and worker registration together.

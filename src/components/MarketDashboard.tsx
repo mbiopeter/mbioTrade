@@ -21,6 +21,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { LiveChart } from "@/components/LiveChart";
+import { PwaInstallButton } from "@/components/PwaInstallButton";
 import { ConnectionRetryToast } from "@/components/ConnectionRetryToast";
 import { useHistoricalCandles } from "@/components/useHistoricalCandles";
 import { useSignalLedger } from "@/components/useSignalLedger";
@@ -733,13 +734,7 @@ export function MarketDashboard() {
   }, [selected]);
   const tradingViewUrl = `https://www.tradingview.com/symbols/${symbol}/`;
   const sourceMatches = !activeSignal || activeSignal.provider === payload.provider;
-  const activeReason = activeSignal
-    ? "Active paper signal — indicator changes cannot cancel it. Only verified TP/SL can close it."
-    : !newsGuard.allowed
-      ? newsGuard.reason
-      : pendingSignal
-      ? "Clearing an older pending breakout setup; the strategy uses two strong 5m candles and the third open."
-      : setup.reason;
+  const setupStatus = activeSignal ? `${activeSignal.direction} active` : !newsGuard.allowed ? "News blocked" : setup.status !== "WAIT" ? `${setup.status} ready` : "Waiting for setup";
   const floatingReturn =
     activeSignal && sourceMatches && currentPrice !== null
       ? ((activeSignal.direction === "BUY" ? 1 : -1) *
@@ -798,6 +793,7 @@ export function MarketDashboard() {
               <span>{now ? dateTime(now) : "—"} EAT</span>
             </div>
             <div className="mbiotraders-alert-tools">
+            <PwaInstallButton />
             <a
               className="mbiotraders-guide-link"
               href="/mbiotraders-signal-guide.pdf"
@@ -1041,11 +1037,11 @@ export function MarketDashboard() {
             <div className="mbiotraders-card-head"><h2><ShieldCheck size={16} /> Signal Setup Details</h2></div>
             <div className="mbiotraders-checklist">
               {setup.criteria.map((criterion) => (
-                <div key={criterion.name} className="mbiotraders-check-item" title={criterion.detail}>
+                <div key={criterion.name} className="mbiotraders-check-item">
                   <span className={`mbiotraders-check-icon ${criterion.ok ? "ok" : "pending"}`}>
                     {criterion.ok ? <Check size={13} /> : <Clock3 size={12} />}
                   </span>
-                  <div className="mbiotraders-check-copy"><strong>{criterion.name}</strong><small>{criterion.detail}</small></div>
+                  <div className="mbiotraders-check-copy"><strong>{criterion.name}</strong></div>
                   <b className={criterion.ok ? "up" : "flat"}>
                     {criterion.ok
                       ? criterion.name.includes("trend")
@@ -1059,15 +1055,15 @@ export function MarketDashboard() {
                   </b>
                 </div>
               ))}
-              <div className="mbiotraders-check-item" title={newsGuard.reason}>
+              <div className="mbiotraders-check-item">
                 <span className={`mbiotraders-check-icon ${newsGuard.allowed ? "ok" : "pending"}`}>
                   {newsGuard.allowed ? <Check size={13} /> : <Clock3 size={12} />}
                 </span>
-                <div className="mbiotraders-check-copy"><strong>High-impact news window</strong><small>{newsGuard.reason}</small></div>
+                <div className="mbiotraders-check-copy"><strong>High-impact news window</strong></div>
                 <b className={newsGuard.allowed ? "up" : "flat"}>{newsGuard.allowed ? "Clear" : "Wait"}</b>
               </div>
             </div>
-            <div className="mbiotraders-conclusion">Conclusion <span>{activeReason}</span></div>
+            <div className="mbiotraders-conclusion"><span>Setup Status</span><strong className={activeSignal ? statusClass(activeSignal.direction) : newsGuard.allowed ? setup.status === "WAIT" ? "flat" : statusClass(setup.status) : "flat"}>{setupStatus}</strong></div>
           </section>
 
           <section className="mbiotraders-card mbiotraders-levels-card">

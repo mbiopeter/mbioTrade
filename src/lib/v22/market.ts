@@ -184,7 +184,7 @@ export async function fetchDeriv(symbol: MarketSymbol, socketFactory?: SocketFac
     try {socket = factory(url);} catch(e) {finish(e instanceof Error?e:new Error("WebSocket unavailable"));return;}
     socket.addEventListener("open",()=> {
       for (const [index,frame] of FRAMES.entries()) {
-        try {socket.send(JSON.stringify({ticks_history:instrument.deriv,style:"candles",granularity:frame,count:260,end:"latest",req_id:100+index}));}
+        try {socket.send(JSON.stringify({ticks_history:instrument.deriv,style:"candles",granularity:frame,count:260,end:"latest",adjust_start_time:1,req_id:100+index}));}
         catch {finish(new Error("Market-data WebSocket send failed"));return;}
       }
     });
@@ -196,13 +196,14 @@ export async function fetchDeriv(symbol: MarketSymbol, socketFactory?: SocketFac
         const index= (payload.req_id ?? 0)-100;
         if (index<0 || index>=FRAMES.length) return;
         const frame = FRAMES[index];
-        if (payload.error) warnings.push(`${FRAME_LABELS[frame]} feed unavailable`);
+        if (payload.error) warnings.push(`${FRAME_LABELS[frame]}: ${String(payload.error.message ?? "Deriv feed unavailable").slice(0,160)}`);
         else {
           try {frames[frame]=parseCandles(payload.candles,frame,"epoch");}
           catch {warnings.push(`${FRAME_LABELS[frame]} history invalid`);}
         }
         count++;
         if(count===FRAMES.length) {
+          if (warnings.length) { finish(new Error(`Deriv: ${warnings.join("; ").slice(0,450)}`)); return; }
           try {validateFrames(frames);finish();} catch(e) {finish(e as Error);}
         }
       } catch {}
@@ -229,10 +230,25 @@ export async function fetchMarket(symbol: MarketSymbol, key = process.env.TWELVE
     }
   }
   if (key.trim()) {
-    try {return await fetchTwelveData(symbol,key.trim());}
-    catch {const fallback=await fetchDeriv(symbol);fallback.warnings.push("Preferred provider unavailable; using public Deriv history. Configure or review TWELVE_DATA_API_KEY to restore Twelve Data.");return fallback;}
+    try { return await fetchTwelveData(symbol, key.trim()); }
+    catch (primaryError) {
+      try {
+        const fallback = await fetchDeriv(symbol);
+        fallback.warnings.push("Preferred provider unavailable; using public Deriv history. Configure or review TWELVE_DATA_API_KEY to restore Twelve Data.");
+        return fallback;
+      } catch (secondaryError) {
+        const first = primaryError instanceof Error ? primaryError.message : "Twelve Data unavailable";
+        const second = secondaryError instanceof Error ? secondaryError.message : "Deriv unavailable";
+        throw new Error(`Twelve Data: ${first.slice(0,160)}; Deriv: ${second.slice(0,450)}`);
+      }
+    }
   }
-  const fallback=await fetchDeriv(symbol);
-  fallback.warnings.push("No Twelve Data key configured. Using the free unauthenticated market feed.");
-  return fallback;
+  try {
+    const fallback = await fetchDeriv(symbol);
+    fallback.warnings.push("No Twelve Data key configured. Using the free unauthenticated market feed.");
+    return fallback;
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "Public feed unavailable";
+    throw new Error(`${reason.slice(0,450)}. No Twelve Data API key is configured; set TWELVE_DATA_API_KEY to enable the alternate provider.`);
+  }
 }
