@@ -95,8 +95,7 @@ export function PwaInstallButton() {
       onClick={() => void onInstall()}
       disabled={installing}
       aria-label={isInstalled ? "mbioTraders app installed" : "Install mbioTraders app on this device"}
-      title={isInstalled ? "mbioTraders is installed" : "Install mbioTraders on your desktop or phone"}
-    >
+      title={isInstalled ? "mbioTraders is installed" : "Install mbioTraders on your desktop or phone"}>
       {isInstalled ? <Check size={15} aria-hidden="true" /> : <Download size={15} aria-hidden="true" />}
       <span>{isInstalled ? "Installed" : installing ? "Installing" : "Install App"}</span>
     </button>

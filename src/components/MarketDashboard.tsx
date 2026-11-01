@@ -732,7 +732,7 @@ export function MarketDashboard() {
     ];
     return chosen.filter((item): item is IndicatorVote => Boolean(item));
   }, [selected]);
-  const tradingViewUrl = `https://www.tradingview.com/symbols/${symbol}/`;
+
   const sourceMatches = !activeSignal || activeSignal.provider === payload.provider;
   const setupStatus = activeSignal ? `${activeSignal.direction} active` : !newsGuard.allowed ? "News blocked" : setup.status !== "WAIT" ? `${setup.status} ready` : "Waiting for setup";
   const floatingReturn =
@@ -758,8 +758,7 @@ export function MarketDashboard() {
             href="https://mbiopeter.co.ke"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Open the mbioPeter portfolio"
-          >
+            aria-label="Open the mbioPeter portfolio">
             <span className="mbiotraders-brand-icon" aria-hidden="true">
               <ChartNoAxesCombined size={23} strokeWidth={2.3} />
             </span>
@@ -788,10 +787,7 @@ export function MarketDashboard() {
                 <small>{feed.payload?.symbol === symbol ? payload.providerName : "Connecting to provider"}</small>
               </div>
             </div>
-            <div className="mbiotraders-topbar-clock">
-              <Clock3 size={13} aria-hidden="true" />
-              <span>{now ? dateTime(now) : "—"} EAT</span>
-            </div>
+
             <div className="mbiotraders-alert-tools">
             <PwaInstallButton />
             <a
