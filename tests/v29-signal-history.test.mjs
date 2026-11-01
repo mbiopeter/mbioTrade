@@ -161,7 +161,7 @@ test("UI renders four columns and a CSV button, and keeps all four columns on mo
   const dashboard = readFileSync(new URL("../src/components/MarketDashboard.tsx", import.meta.url), "utf8");
   const hook = readFileSync(new URL("../src/components/useSignalLedger.ts", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8");
-  const recentSection = dashboard.split('<section className="mbiotraders-card mbiotraders-recent-card">')[1].split('<section className="mbiotraders-card mbiotraders-stats-card">')[0];
+  const recentSection = dashboard.split(/<section className="mbiotraders-card mbiotraders-recent-card"[^>]*>/)[1].split(/<section className="mbiotraders-card mbiotraders-stats-card"[^>]*>/)[0];
 
   assert.match(hook, /historyAll: recentSignals\(ledger\.history\)/);
   assert.match(recentSection, /<span>Time<\/span>[\s\S]*?<span>Direction<\/span>[\s\S]*?<span>Pair<\/span>[\s\S]*?<span>Result<\/span>/);

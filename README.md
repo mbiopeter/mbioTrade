@@ -109,3 +109,9 @@ npm run dev
 ```
 
 The unified service worker remains at `/notification-sw.js` to preserve the existing notification registration path. The App Router automatically exposes `/manifest.webmanifest` from `src/app/manifest.ts`. Never deploy the app behind a path prefix without updating the manifest scope and worker registration together.
+
+## v35 Analytics, SEO and mobile installation controls
+
+This release adds Google Analytics 4 event measurement, the `/how-signals-work` indexable methodology page, `/privacy` opt-out, a Google Search Console verification variable, and a compact header that keeps activity icons beside the title on mobile. Installed PWA sessions hide the Install App button. The seven markets, data provider safeguards, notifications, signal rules, news guard, and ledger are unchanged.
+
+Configure `NEXT_PUBLIC_GA_ID` with the Google Analytics 4 web stream Measurement ID; by default tracking is disabled locally. Optionally set `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`. For event names, GA4 custom dimensions, Realtime testing and indexing steps, see `docs/V35-ANALYTICS-SEO-SETUP.md`.

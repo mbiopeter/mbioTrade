@@ -6,11 +6,11 @@ import manifest from "../src/app/manifest.ts";
 
 const read = (file) => readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
 
-test("v34 package and lockfile match for clean installs", () => {
+test("v35 package and lockfile match for clean installs", () => {
   const pkg = JSON.parse(read("package.json"));
   const lock = JSON.parse(read("package-lock.json"));
-  assert.equal(pkg.name, "mbiotraders-v34");
-  assert.equal(pkg.version, "34.0.0");
+  assert.equal(pkg.name, "mbiotraders-v35");
+  assert.equal(pkg.version, "35.0.0");
   assert.equal(lock.name, pkg.name);
   assert.equal(lock.version, pkg.version);
   assert.equal(lock.packages[""].name, pkg.name);
@@ -22,7 +22,7 @@ test("v34 package and lockfile match for clean installs", () => {
 
 test("setup displays only the larger headings and correct condition statuses", () => {
   const source = read("src/components/MarketDashboard.tsx");
-  const section = source.slice(source.indexOf('<section className="mbiotraders-card mbiotraders-setup-card">'), source.indexOf('<section className="mbiotraders-card mbiotraders-levels-card">'));
+  const section = source.slice(source.indexOf('<section className="mbiotraders-card mbiotraders-setup-card"'), source.indexOf('<section className="mbiotraders-card mbiotraders-levels-card"'));
   assert.ok(section.length > 700);
   assert.match(section, /setup\.criteria\.map/);
   assert.match(section, /\{criterion\.name\}/);
@@ -80,7 +80,7 @@ test("desktop and mobile install button uses real user gesture or platform instr
   const css = read("src/app/globals.css");
   assert.match(css, /\.mbiotraders-install-button/);
   assert.match(css, /\.mbiotraders-install-dialog/);
-  assert.match(css, /"brand brand" "alerts alerts" "feed feed" "context context"/);
+  assert.match(css, /"brand alerts" "feed feed" "context context"/);
 });
 
 test("single service worker preserves signal notifications and does not cache live APIs", async () => {

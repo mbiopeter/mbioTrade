@@ -14,7 +14,7 @@ const necessary = [
   'src/lib/v231/momentum.ts', 'src/lib/v231/gauge.ts',
   'src/lib/v26-signals.ts', 'src/lib/signal-history.ts',
   'src/lib/v31/entry.ts', 'src/lib/v31/browser-alerts.ts',
-  'src/components/browserNotifications.ts', 'src/components/PwaInstallButton.tsx', 'src/app/manifest.ts', 'public/offline.html', 'public/icons/icon-192.png', 'public/icons/icon-512.png', 'public/icons/icon-maskable-512.png', 'public/icons/apple-touch-icon.png', 'public/notification-sw.js', 'public/mbiotraders-signal-guide.pdf', 'src/lib/v26-history.ts', 'src/components/useSignalLedger.ts', 'src/components/useHistoricalCandles.ts', 'src/app/api/market/history/route.ts', 'next.config.ts',
+  'src/components/browserNotifications.ts', 'src/components/PwaInstallButton.tsx', 'src/components/AnalyticsTracker.tsx', 'src/components/AnalyticsPreferences.tsx', 'src/lib/analytics.ts', 'src/app/how-signals-work/page.tsx', 'src/app/privacy/page.tsx', 'src/app/manifest.ts', 'public/offline.html', 'public/icons/icon-192.png', 'public/icons/icon-512.png', 'public/icons/icon-maskable-512.png', 'public/icons/apple-touch-icon.png', 'public/notification-sw.js', 'public/mbiotraders-signal-guide.pdf', 'src/lib/v26-history.ts', 'src/components/useSignalLedger.ts', 'src/components/useHistoricalCandles.ts', 'src/app/api/market/history/route.ts', 'next.config.ts',
 ];
 const absent = necessary.filter(file => !existsSync(resolve(root,file)));
 if (absent.length) {

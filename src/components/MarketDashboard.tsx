@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { LiveChart } from "@/components/LiveChart";
 import { PwaInstallButton } from "@/components/PwaInstallButton";
+import { trackEvent } from "@/lib/analytics";
 import { ConnectionRetryToast } from "@/components/ConnectionRetryToast";
 import { useHistoricalCandles } from "@/components/useHistoricalCandles";
 import { useSignalLedger } from "@/components/useSignalLedger";
@@ -509,6 +510,8 @@ export function MarketDashboard() {
     { id: string; symbol: MarketSymbol; time: number; status: string }[]
   >([]);
   const audio = useRef<AudioContext | null>(null);
+  const trackedSignalViews = useRef<Set<string>>(new Set());
+  const lastFeedIssue = useRef<string | null>(null);
   const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
   const { feed, reload } = useMarket(symbol);
   const { guard: newsGuard } = useNewsCalendar(symbol, now);
@@ -576,6 +579,27 @@ export function MarketDashboard() {
   const pendingSignal = tracker.pending;
   const latestSignals = tracker.historyAll;
   const displayedHistory = signalPage(latestSignals, recentPage);
+
+  useEffect(() => {
+    if (!tracker.ready || !activeSignal || trackedSignalViews.current.has(activeSignal.id)) return;
+    trackedSignalViews.current.add(activeSignal.id);
+    trackEvent("signal_active_view", { market: activeSignal.symbol, direction: activeSignal.direction });
+  }, [tracker.ready, activeSignal]);
+
+  useEffect(() => {
+    if (feed.requestSymbol !== symbol || !feed.error) {
+      lastFeedIssue.current = null;
+      return;
+    }
+    if (lastFeedIssue.current === symbol) return;
+    lastFeedIssue.current = symbol;
+    trackEvent("market_feed_unavailable", { market: symbol });
+  }, [feed.error, feed.requestSymbol, symbol]);
+
+  useEffect(() => {
+    if (newsGuard.state !== "BLOCKED") return;
+    trackEvent("news_window_blocked", { market: symbol });
+  }, [newsGuard.state, symbol]);
 
   const downloadSignals = () => {
     if (!latestSignals.length) return;
@@ -645,7 +669,8 @@ export function MarketDashboard() {
     if (audio.current) void audio.current.resume().then(() => { if (audio.current) beep(audio.current); }).catch(() => {});
     if (notificationSupported() && Notification.permission === "granted") {
       void sendBrowserSignalNotification(activeSignal).then((sent) => {
-        if (!sent) setNotificationMessage("Browser notification could not be displayed. Check browser and OS settings.");
+        if (sent) trackEvent("signal_notification_sent", { market: activeSignal.symbol, direction: activeSignal.direction });
+        else setNotificationMessage("Browser notification could not be displayed. Check browser and OS settings.");
       });
     }
   }, [tracker.ready, activeSignal, isLive, audible, now, symbol]);
@@ -750,15 +775,16 @@ export function MarketDashboard() {
     (feed.error !== null || feed.streamRetrying);
 
   return (
-    <main className="mbiotraders-page">
-      <header className="mbiotraders-topbar">
+    <main className="mbiotraders-page" data-analytics-section="dashboard">
+      <header className="mbiotraders-topbar" data-analytics-section="header">
         <div className="mbiotraders-topbar-primary">
           <a
             className="mbiotraders-brand-link"
             href="https://mbiopeter.co.ke"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Open the mbioPeter portfolio">
+            aria-label="Open the mbioPeter portfolio"
+            data-analytics-event="portfolio_open" data-analytics-label="portfolio">
             <span className="mbiotraders-brand-icon" aria-hidden="true">
               <ChartNoAxesCombined size={23} strokeWidth={2.3} />
             </span>
@@ -792,6 +818,7 @@ export function MarketDashboard() {
             <PwaInstallButton />
             <a
               className="mbiotraders-guide-link"
+              data-analytics-event="signal_guide_download" data-analytics-label="signal_guide"
               href="/mbiotraders-signal-guide.pdf"
               download="mbioTraders-Signal-Guide.pdf"
               title="Download the illustrated guide to signal detection (PDF)"
@@ -805,11 +832,13 @@ export function MarketDashboard() {
               type="button"
               className={`mbiotraders-alert-button ${audible ? "on" : ""}`}
               onClick={() => void enableAlert()}
+              data-analytics-event="alerts_toggle" data-analytics-label={audible ? "disable" : "enable"}
+              aria-label={audible ? "Turn off sound and browser notifications" : "Enable sound and browser notifications"}
               aria-pressed={audible}
               title={notificationMessage ?? "Enable sound and desktop notifications for new signals"}
             >
               {audible ? <Volume2 size={17} /> : <BellOff size={17} />}
-              Alerts {audible ? "On" : "Off"}
+              <span className="mbiotraders-alert-label">Alerts {audible ? "On" : "Off"}</span>
             </button>
             </div>
             {notificationMessage && <span className="sr-only" role="status" aria-live="polite">{notificationMessage}</span>}
@@ -826,6 +855,7 @@ export function MarketDashboard() {
                   type="button"
                   className={`mbiotraders-symbol-tab ${item.symbol === "BTCUSD" ? "crypto" : ""} ${symbol === item.symbol ? "active" : ""}`}
                   onClick={() => setSymbol(item.symbol)}
+                  data-analytics-event="market_select" data-analytics-label={item.symbol}
                   aria-pressed={symbol === item.symbol}
                 >
                   {item.symbol === "BTCUSD" ? (
@@ -854,6 +884,7 @@ export function MarketDashboard() {
                   type="button"
                   className={`mbiotraders-timeframe-tab ${frame === item ? "active" : ""}`}
                   onClick={() => setFrame(item)}
+                  data-analytics-event="timeframe_select" data-analytics-label={FRAME_LABELS[item]}
                   aria-pressed={frame === item}
                 >
                   {FRAME_LABELS[item]}
@@ -869,7 +900,7 @@ export function MarketDashboard() {
       {(feed.loading || !feed.payload || feed.payload.symbol !== symbol)
         ? <DashboardSkeletonCards />
         : <section className="mbiotraders-grid">
-          <section className="mbiotraders-card mbiotraders-chart-card">
+          <section className="mbiotraders-card mbiotraders-chart-card" data-analytics-section="chart">
             <div className="mbiotraders-card-head mbiotraders-chart-head">
               <div>
                 <div className="mbiotraders-chart-title">{instrument.symbol} · {FRAME_LABELS[frame]} · {symbol === "BTCUSD" ? "CRYPTO" : "FX"}</div>
@@ -908,7 +939,7 @@ export function MarketDashboard() {
             )}
           </section>
 
-          <section className="mbiotraders-card mbiotraders-gauge-card">
+          <section className="mbiotraders-card mbiotraders-gauge-card" data-analytics-section="market_strength">
             <div className="mbiotraders-card-head"><h2>Overall Market Strength <Info size={14} /></h2></div>
             <StrengthGauge analysis={selected} score={gaugeScore} />
             <div className="mbiotraders-gauge-foot">
@@ -918,7 +949,7 @@ export function MarketDashboard() {
             </div>
           </section>
 
-          <section className="mbiotraders-card mbiotraders-signal-card">
+          <section className="mbiotraders-card mbiotraders-signal-card" data-analytics-section="signal_plan">
             <div className="mbiotraders-card-head">
               <h2>Current Signal</h2>
               <span className={`mbiotraders-live-mini ${isLive ? "on" : ""}`}>{activeSignal ? "ACTIVE" : isLive ? "LIVE" : "WAIT"}</span>
@@ -984,7 +1015,7 @@ export function MarketDashboard() {
             </div>
           </section>
 
-          <section className="mbiotraders-card mbiotraders-align-card">
+          <section className="mbiotraders-card mbiotraders-align-card" data-analytics-section="timeframe_alignment">
             <div className="mbiotraders-card-head"><h2><Activity size={16} /> Multi-Timeframe Trend Alignment</h2>
               <div className="mbiotraders-momentum-tabs" aria-label="Higher-timeframe momentum lookback">
                 {MOMENTUM_WINDOWS.map((days) => (
@@ -993,6 +1024,7 @@ export function MarketDashboard() {
                     type="button"
                     className={safeMomentumDays === days ? "active" : ""}
                     onClick={() => setMomentumDays(days)}
+                    data-analytics-event="momentum_window_select" data-analytics-label={`${days}D`}
                     aria-pressed={safeMomentumDays === days}
                   >
                     {days}D
@@ -1029,8 +1061,8 @@ export function MarketDashboard() {
             </div>
           </section>
 
-          <section className="mbiotraders-card mbiotraders-setup-card">
-            <div className="mbiotraders-card-head"><h2><ShieldCheck size={16} /> Signal Setup Details</h2></div>
+          <section className="mbiotraders-card mbiotraders-setup-card" data-analytics-section="signal_setup">
+            <div className="mbiotraders-card-head"><h2><ShieldCheck size={16} /> Signal Setup Details</h2><a className="mbiotraders-method-link" href="/how-signals-work" data-analytics-event="method_guide_open" data-analytics-label="methodology">How it works</a></div>
             <div className="mbiotraders-checklist">
               {setup.criteria.map((criterion) => (
                 <div key={criterion.name} className="mbiotraders-check-item">
@@ -1062,7 +1094,7 @@ export function MarketDashboard() {
             <div className="mbiotraders-conclusion"><span>Setup Status</span><strong className={activeSignal ? statusClass(activeSignal.direction) : newsGuard.allowed ? setup.status === "WAIT" ? "flat" : statusClass(setup.status) : "flat"}>{setupStatus}</strong></div>
           </section>
 
-          <section className="mbiotraders-card mbiotraders-levels-card">
+          <section className="mbiotraders-card mbiotraders-levels-card" data-analytics-section="key_levels">
             <div className="mbiotraders-card-head"><h2><Bell size={16} /> Key Levels</h2></div>
             <div className="mbiotraders-levels-list">
               <div><span className="down">Resistance 2</span><strong className="down">{price(keyLevels.resistance2, instrument.precision)}</strong></div>
@@ -1073,7 +1105,7 @@ export function MarketDashboard() {
             </div>
           </section>
 
-          <section className="mbiotraders-card mbiotraders-tech-card">
+          <section className="mbiotraders-card mbiotraders-tech-card" data-analytics-section="technical_indicators">
             <div className="mbiotraders-card-head mbiotraders-tech-head">
               <div>
                 <h2>Technical Indicators</h2>
@@ -1092,7 +1124,7 @@ export function MarketDashboard() {
             </div>
           </section>
 
-          <section className="mbiotraders-card mbiotraders-recent-card">
+          <section className="mbiotraders-card mbiotraders-recent-card" data-analytics-section="recent_signals">
             <div className="mbiotraders-card-head mbiotraders-recent-head">
               <h2><Activity size={16} /> Recent Signals</h2>
               <button
@@ -1101,6 +1133,7 @@ export function MarketDashboard() {
                 onClick={downloadSignals}
                 disabled={!latestSignals.length}
                 title="Export all stored signals as CSV"
+                data-analytics-event="history_export_csv" data-analytics-label="signals_csv"
                 aria-label="Export all recent signals as CSV"
               >
                 <Download size={14} aria-hidden="true" /> Export CSV
@@ -1154,12 +1187,16 @@ export function MarketDashboard() {
             </div>
           </section>
 
-          <section className="mbiotraders-card mbiotraders-stats-card">
+          <section className="mbiotraders-card mbiotraders-stats-card" data-analytics-section="market_statistics">
             <div className="mbiotraders-card-head"><h2>Market Statistics <small>(Last 100 Signals)</small></h2></div>
             <StatsCard signals={recentForStats} />
           </section>
         </section>}
-
+      <footer className="mbiotraders-meta-footer" data-analytics-section="site_footer">
+        <a href="/how-signals-work">Signal methodology</a>
+        <span aria-hidden="true">·</span>
+        <a href="/privacy">Privacy & analytics</a>
+      </footer>
     </main>
   );
 }

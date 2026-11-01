@@ -1,8 +1,8 @@
 {
-  "name": "mbiotraders-v34",
-  "version": "34.0.0",
+  "name": "mbiotraders-v35",
+  "version": "35.0.0",
   "private": true,
-  "description": "mbioTraders v34: simplified larger-text signal setup and installable desktop/mobile progressive web app; preserves v33 markets, signals, news safeguards and alerts.",
+  "description": "mbioTraders v35: GA4 event analytics and search indexing improvements, smarter installed-PWA controls and responsive mobile header; preserves all v34 trading features.",
   "engines": {
     "node": "24.x"
   },

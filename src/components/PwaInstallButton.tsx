@@ -1,15 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Download, MonitorSmartphone, Share2, X } from "lucide-react";
+import { Download, MonitorSmartphone, Share2, X } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 type InstallOutcome = { outcome: "accepted" | "dismissed"; platform?: string };
 type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<InstallOutcome> };
 type IosNavigator = Navigator & { standalone?: boolean };
 
+const INSTALLED_KEY = "mbiotraders:pwa-installed";
+
 function installed() {
   return window.matchMedia("(display-mode: standalone)").matches ||
-    (navigator as IosNavigator).standalone === true;
+    (navigator as IosNavigator).standalone === true ||
+    (() => { try { return window.localStorage.getItem(INSTALLED_KEY) === "true"; } catch { return false; } })();
 }
 
 function installationPlatform(): "ios" | "android" | "desktop" {
@@ -21,7 +25,7 @@ function installationPlatform(): "ios" | "android" | "desktop" {
 
 export function PwaInstallButton() {
   const promptEvent = useRef<InstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState<boolean | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [platform, setPlatform] = useState<"ios" | "android" | "desktop">("desktop");
@@ -33,9 +37,13 @@ export function PwaInstallButton() {
     const onInstallAvailable = (event: Event) => {
       event.preventDefault();
       promptEvent.current = event as InstallPromptEvent;
+      try { window.localStorage.removeItem(INSTALLED_KEY); } catch {}
+      setIsInstalled(false);
     };
     const onInstalled = () => {
       setIsInstalled(true);
+      try { window.localStorage.setItem(INSTALLED_KEY, "true"); } catch {}
+      trackEvent("pwa_install_completed", { platform: installationPlatform() });
       setInstalling(false);
       setIsOpen(false);
       promptEvent.current = null;
@@ -72,6 +80,7 @@ export function PwaInstallButton() {
         await available.prompt();
         const choice = await available.userChoice;
         if (choice.outcome === "accepted") {
+          trackEvent("pwa_install_accepted", { platform });
           setFeedback("Installation accepted. Your device will add the app shortly.");
         } else {
           setFeedback("Installation dismissed. You can install it later.");
@@ -88,16 +97,19 @@ export function PwaInstallButton() {
     setIsOpen(true);
   };
 
+  if (isInstalled !== false) return null;
+
   return <>
     <button
       type="button"
-      className={`mbiotraders-install-button ${isInstalled ? "installed" : ""}`}
+      className="mbiotraders-install-button"
+      data-analytics-event="pwa_install_intent" data-analytics-label="install_app"
       onClick={() => void onInstall()}
       disabled={installing}
-      aria-label={isInstalled ? "mbioTraders app installed" : "Install mbioTraders app on this device"}
-      title={isInstalled ? "mbioTraders is installed" : "Install mbioTraders on your desktop or phone"}>
-      {isInstalled ? <Check size={15} aria-hidden="true" /> : <Download size={15} aria-hidden="true" />}
-      <span>{isInstalled ? "Installed" : installing ? "Installing" : "Install App"}</span>
+      aria-label="Install mbioTraders app on this device"
+      title="Install mbioTraders on your desktop or phone">
+      <Download size={15} aria-hidden="true" />
+      <span>{installing ? "Installing" : "Install App"}</span>
     </button>
     <span className="sr-only" role="status" aria-live="polite">{feedback}</span>
     {isOpen && <div className="mbiotraders-install-overlay" onMouseDown={(event) => {

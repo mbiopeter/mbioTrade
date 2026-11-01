@@ -71,3 +71,9 @@
 
 - Introduced retry toast and revised header.
 - Retained historical data loading and persistent signal management.
+
+## v35
+- Dedicated GA4 tracking for page views, scroll depth, UI and chart controls, PDF/CSV downloads, PWA install, notifications, news blocks and feed status, with a local opt-out.
+- Search-friendly methodology page, expanded canonical metadata, sitemap and optional Search Console verification.
+- Hide the PWA install control when already installed; keep compact header action icons immediately to the right of the mbioTraders title on phones.
+- Preserve the trading strategies, data providers, calendar/news safety checks, browser notifications and all seven instruments.

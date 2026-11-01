@@ -2279,3 +2279,69 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
   .mbiotraders-setup-card .mbiotraders-check-item > b { font-size: 12.5px; }
   .mbiotraders-install-dialog { padding: 24px 19px; }
 }
+
+.mbiotraders-meta-footer { display:flex; justify-content:center; align-items:center; gap:11px; color:#6f9399; font-size:10px; padding:5px 0 1px; }
+.mbiotraders-meta-footer a:hover, .mbiotraders-method-link:hover { color:#52e8b7; text-decoration:underline; }
+.mbiotraders-method-link { color:#74c9ad; font-weight:700; font-size:10px; white-space:nowrap; }
+.mbiotraders-info-page { min-height:100vh; max-width:850px; margin:0 auto; padding:24px clamp(18px,5vw,40px) 54px; color:#e8f3f4; }
+.mbiotraders-info-nav { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding-bottom:26px; }
+.mbiotraders-info-nav a,.mbiotraders-info-page footer a { color:#66e8bd; font-weight:750; }
+.mbiotraders-info-page header>p:first-child { font-weight:800; letter-spacing:.12em; font-size:11px; color:#55d7b5; }
+.mbiotraders-info-page h1 { font-size:clamp(27px,5vw,42px); line-height:1.15; letter-spacing:-.035em; margin:8px 0 15px; }
+.mbiotraders-info-page header>p:last-child { max-width:710px; line-height:1.65; color:#b0c9cb; }
+.mbiotraders-info-steps { display:grid; gap:11px; margin-top:30px; }
+.mbiotraders-info-steps section { display:grid; grid-template-columns:35px minmax(0,1fr); gap:14px; background:#081f2b; border:1px solid #23414e; padding:17px; border-radius:12px; }
+.mbiotraders-info-steps section>span { color:#45dcb0; font-weight:900; }
+.mbiotraders-info-steps h2 { font-size:17px; margin:0 0 8px; }
+.mbiotraders-info-steps p,.mbiotraders-privacy-section p { font-size:14px; line-height:1.65; color:#b9d0d2; margin:0; }
+.mbiotraders-info-disclaimer { margin:25px 0; padding:14px 18px; border-left:3px solid #cfaa53; background:#19251e; line-height:1.5; color:#dcd2bb; }
+.mbiotraders-info-page footer { display:flex; gap:10px; margin-top:25px; color:#749da0; }
+.mbiotraders-privacy-section { border:1px solid #23414e; background:#081f2b; padding:22px; border-radius:12px; margin:18px 0; }
+.mbiotraders-privacy-section h2 { margin:0 0 11px; font-size:19px; }
+.mbiotraders-privacy-section p + p { margin-top:13px; }
+.mbiotraders-privacy-control { margin-top:17px; border-top:1px solid #214853; padding-top:18px; }
+.mbiotraders-privacy-control button { margin:10px 0; padding:11px 16px; border:1px solid #29a17f; border-radius:10px; background:#12634f; color:#eafff4; font-weight:800; }
+.mbiotraders-privacy-control button:disabled { opacity:.6; }
+
+@media (max-width: 780px) {
+  .mbiotraders-topbar-primary {
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:"brand alerts" "feed feed" "context context";
+    gap:8px;
+  }
+  .mbiotraders-brand-link { grid-area:brand; min-width:0; max-width:100%; }
+  .mbiotraders-alert-tools { grid-area:alerts; justify-self:end; justify-content:flex-end; flex-wrap:nowrap; min-width:0; gap:6px; }
+}
+@media (max-width: 560px) {
+  .mbiotraders-topbar-primary { column-gap:5px; }
+  .mbiotraders-brand-link { gap:5px; }
+  .mbiotraders-brand-icon { width:32px; height:32px; flex:0 0 32px; }
+  .mbiotraders-brand-copy h1 { font-size:clamp(17px,4.7vw,21px); }
+  .mbiotraders-brand-copy small { font-size:8px; }
+  .mbiotraders-alert-tools { gap:4px; }
+  .mbiotraders-alert-tools .mbiotraders-guide-link,
+  .mbiotraders-alert-tools .mbiotraders-install-button,
+  .mbiotraders-alert-tools .mbiotraders-alert-button {
+    width:31px; min-width:31px; height:32px; min-height:32px;
+    padding:0; gap:0; display:inline-flex; align-items:center; justify-content:center; border-radius:8px;
+  }
+  .mbiotraders-alert-tools .mbiotraders-guide-link span,
+  .mbiotraders-alert-tools .mbiotraders-guide-link svg:last-child,
+  .mbiotraders-alert-tools .mbiotraders-install-button span,
+  .mbiotraders-alert-tools .mbiotraders-alert-label { display:none; }
+  .mbiotraders-alert-tools .mbiotraders-guide-link span::after { content:none; }
+  .mbiotraders-alert-tools .mbiotraders-alert-button svg { width:16px; height:16px; }
+}
+@media (max-width: 340px) {
+  .mbiotraders-topbar { padding-inline:7px; }
+  .mbiotraders-brand-copy h1 { font-size:17px; }
+  .mbiotraders-brand-copy small { font-size:7.5px; }
+  .mbiotraders-alert-tools { gap:3px; }
+  .mbiotraders-alert-tools .mbiotraders-guide-link,
+  .mbiotraders-alert-tools .mbiotraders-install-button,
+  .mbiotraders-alert-tools .mbiotraders-alert-button { width:29px; min-width:29px; height:30px; min-height:30px; }
+}
+
+@media (min-width:1200px) and (min-height:700px) {
+  .mbiotraders-meta-footer { flex:0 0 12px; padding:0; line-height:12px; }
+}
