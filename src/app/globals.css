@@ -2159,7 +2159,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid #38ddb0; outline-offs
   flex: 0 0 auto;
 }
 .mbiotraders-install-button:hover { border-color: #3ae4aa; background: #185e4c; }
-.mbiotraders-install-button.installed { display: hidden; border-color: #395960; background: #0a2731; color: #a5e6c7; }
+.mbiotraders-install-button.installed { display: none}
 .mbiotraders-install-button:disabled { opacity: 0.7; cursor: progress; }
 .mbiotraders-install-overlay {
   position: fixed;
