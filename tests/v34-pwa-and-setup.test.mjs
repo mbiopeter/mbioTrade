@@ -9,8 +9,8 @@ const read = (file) => readFileSync(new URL(`../${file}`, import.meta.url), "utf
 test("v35 package and lockfile match for clean installs", () => {
   const pkg = JSON.parse(read("package.json"));
   const lock = JSON.parse(read("package-lock.json"));
-  assert.equal(pkg.name, "mbiotraders-v35");
-  assert.equal(pkg.version, "35.0.0");
+  assert.equal(pkg.name, "mbiotraders-v37");
+  assert.equal(pkg.version, "37.0.0");
   assert.equal(lock.name, pkg.name);
   assert.equal(lock.version, pkg.version);
   assert.equal(lock.packages[""].name, pkg.name);
@@ -27,11 +27,10 @@ test("setup displays only the larger headings and correct condition statuses", (
   assert.match(section, /setup\.criteria\.map/);
   assert.match(section, /\{criterion\.name\}/);
   assert.match(section, /\{criterion\.ok \?/);
-  assert.match(section, /High-impact news window/);
-  assert.match(section, /newsGuard\.allowed \? "Clear" : "Wait"/);
-  assert.doesNotMatch(section, /criterion\.detail|newsGuard\.reason|<small>|activeReason/);
-  assert.match(section, /Setup Status/);
-  assert.match(section, /setupStatus/);
+  assert.match(section, /setup\.criteria\.map/);
+  assert.doesNotMatch(section, /criterion\.detail|<small>|activeReason/);
+  assert.match(section, /Next qualification/);
+  assert.match(section, /setupBanner\.message/);
   const css = read("src/app/globals.css");
   assert.match(css, /\.mbiotraders-setup-card \.mbiotraders-check-copy strong \{[\s\S]*?font-size: 15px/);
   assert.match(css, /\.mbiotraders-setup-card \.mbiotraders-check-copy small \{ display: none; \}/);
@@ -125,8 +124,8 @@ test("single service worker preserves signal notifications and does not cache li
   listeners.get("fetch")({ request: apiRequest, respondWith: () => { intercepted = true; } });
   assert.equal(intercepted, false);
   assert.equal(seen.cached.length, before);
-  const news = new Request("https://traders.mbiopeter.co.ke/api/news-calendar");
-  listeners.get("fetch")({ request: news, respondWith: () => { intercepted = true; } });
+  const anotherApi = new Request("https://traders.mbiopeter.co.ke/api/market/history?symbol=XAUUSD");
+  listeners.get("fetch")({ request: anotherApi, respondWith: () => { intercepted = true; } });
   assert.equal(intercepted, false);
   const navigation = { method: "GET", mode: "navigate", url: "https://traders.mbiopeter.co.ke/" };
   let result;

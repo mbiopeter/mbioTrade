@@ -6,7 +6,6 @@ import {
   parseKrakenTicker, fetchKraken, parseCandles,
 } from '../src/lib/v22/market.ts';
 import { emptyLedger, activate, parseLedger, update } from '../src/lib/v26-signals.ts';
-import { evaluateNewsGuard } from '../src/lib/news-calendar.ts';
 import { completed } from '../src/lib/v22/analysis.ts';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -19,9 +18,6 @@ function rows(frame, count=270, close=65000) {
     return [timestamp,String(open),String(open+21),String(open-21),String(open+3),'0','1.0',3];
   });
 }
-const snap=(events,at=Date.now())=>({
-  source:'Finance Calendar',fetchedAt:at,from:at-86400000,to:at+86400000,events,
-});
 const signal=(symbol='BTCUSD')=>({
   id:'btc-first',symbol,provider:'kraken',direction:'BUY',entry:65000,
   stop:64500,target:66000,openedAt:Date.now()-10_000,confidence:76,
@@ -115,13 +111,12 @@ test('BTC signals persist independently, expire on verified TP, and count in his
   assert.equal(updated.history.BTCUSD?.[0].status,'TP');
 });
 
-test('BTC USD high-impact news retains 3-before/2-after gate and fails closed',()=>{
-  const now=Date.UTC(2026,9,31,12,0,0);
-  const block={id:'us',country:'US',title:'US news',time:now,
-    windowStart:now-3*3600e3,windowEnd:now+2*3600e3,timeConfirmed:true};
-  assert.equal(evaluateNewsGuard(snap([block],now),'BTCUSD',now).allowed,false);
-  assert.equal(evaluateNewsGuard(snap([block],now+2*3600e3+1),'BTCUSD',now+2*3600e3+1).allowed,true);
-  assert.equal(evaluateNewsGuard(null,'BTCUSD',now).allowed,false);
+test('BTCUSD signal activation uses the common technical ledger', () => {
+  const dashboard=read('src/components/MarketDashboard.tsx');
+  const ledger=read('src/components/useSignalLedger.ts');
+  assert.match(dashboard,/useSignalLedger\(/);
+  assert.match(ledger,/setup\.dataCurrent/);
+  assert.match(dashboard,/useSignalLedger\(/);
 });
 
 test('BTC crypto UI, stream, history limit and preserving other signal modules',()=>{
@@ -136,7 +131,7 @@ test('BTC crypto UI, stream, history limit and preserving other signal modules',
   assert.match(market, /fetchKraken\(symbol\)/);
   assert.match(history, /provider !== "kraken"/);
   assert.match(route, /provider === "kraken"/);
-  for(const feature of ['useNewsCalendar\(symbol, now\)','useSignalLedger\(','rememberBrowserAlert\(','const downloadSignals =','useHistoricalCandles\(']){
+  for(const feature of ['useSignalLedger\(','rememberBrowserAlert\(','const downloadSignals =','useHistoricalCandles\(']){
     assert.ok(dashboard.includes(feature),feature);
   }
 });

@@ -15,5 +15,5 @@ Verification in this release environment:
 Limitations:
 
 - The environment could not fetch required npm packages. `npm ci --offline` reported an uncached `undici-types` tarball. An online npm install failed in this environment with an npm CLI exit-handler error. Therefore `npm run check` (type checking with all dependencies available) and `npm run build` (Next.js production compilation) were not successfully completed here.
-- The layout viewports were inspected using a static browser representation with the actual v32 stylesheet; the complete deployed Next.js application has not been visually smoke-tested with live data. Real data and longer economic-calendar text may use more room than the representative sample. On screens below 700px tall, scrolling is allowed rather than clipping content.
+- The layout viewports were inspected using a static browser representation with the actual v32 stylesheet; the complete deployed Next.js application has not been visually smoke-tested with live data. Real data can use more room than the representative sample. On screens below 700px tall, scrolling is allowed rather than clipping content.
 - Chrome notification delivery depends on HTTPS/localhost, permission, a running browser page and operating-system settings, unchanged from v31.

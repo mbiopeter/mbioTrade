@@ -1,4 +1,4 @@
-const STATIC_CACHE = "mbiotraders-pwa-v34-static";
+const STATIC_CACHE = "mbiotraders-pwa-v37-light-static";
 const OFFLINE_URL = "/offline.html";
 const PRECACHE = [OFFLINE_URL, "/icon.svg", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon-maskable-512.png", "/icons/apple-touch-icon.png"];
 

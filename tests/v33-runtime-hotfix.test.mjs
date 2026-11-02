@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fetchDeriv } from "../src/lib/v22/market.ts";
-import { isFreshNewsSnapshot, NEWS_MAX_AGE_MS } from "../src/lib/news-calendar.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const source = (name) => readFileSync(resolve(root,name),"utf8");
@@ -43,23 +42,14 @@ test("Deriv error is surfaced with timeframe rather than an opaque 503", async()
   await assert.rejects(fetchDeriv("XAUUSD",()=>new Socket()), /Deriv: 5m: Market is closed/);
 });
 
-test("news response cache is bounded to the already-required safety freshness",()=>{
-  const now=1_800_000_000_000;
-  const snapshot={source:"Finance Calendar",events:[],fetchedAt:now,from:now-86400000,to:now+86400000};
-  assert.equal(isFreshNewsSnapshot(snapshot,now),true);
-  assert.equal(isFreshNewsSnapshot(snapshot,now+NEWS_MAX_AGE_MS),true);
-  assert.equal(isFreshNewsSnapshot(snapshot,now+NEWS_MAX_AGE_MS+1),false);
-  assert.equal(isFreshNewsSnapshot(snapshot,now-1),false);
-  assert.equal(isFreshNewsSnapshot(snapshot,now+90_001,90_000),false);
-  assert.equal(isFreshNewsSnapshot(null,now),false);
-  assert.equal(isFreshNewsSnapshot({...snapshot,to:now},now),false);
+test("dashboard uses validated market data when active", () => {
+  const dashboard=source("src/components/MarketDashboard.tsx");
+  assert.match(dashboard, /useSignalLedger\(/);
+  assert.match(dashboard,/isLive:/);
+  assert.match(source("src/components/useSignalLedger.ts"),/setup.dataCurrent/);
 });
 
-test("news endpoint reuses only fresh verified calendar responses and fails closed",()=>{
- const route=source("src/app/api/news-calendar/route.ts");
- assert.match(route,/isFreshNewsSnapshot\(lastVerified, Date\.now\(\)\)/);
- assert.match(route,/status: 503/);
- assert.match(route,/pending = fetchNewsSnapshot\(\)\.finally/);
- const history=source("src/lib/v26-history.ts");
- assert.match(history,/adjust_start_time: 1/);
+test("closed-market Deriv history handling is preserved", () => {
+  const history=source("src/lib/v26-history.ts");
+  assert.match(history,/adjust_start_time: 1/);
 });

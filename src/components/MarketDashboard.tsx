@@ -10,9 +10,8 @@ import {
   ChartNoAxesCombined,
   Clock3,
   Download,
-  CalendarClock,
-  ExternalLink,
   Info,
+  Underline,
   BookOpen,
   RefreshCcw,
   ShieldCheck,
@@ -23,11 +22,10 @@ import {
 import { LiveChart } from "@/components/LiveChart";
 import { PwaInstallButton } from "@/components/PwaInstallButton";
 import { trackEvent } from "@/lib/analytics";
+import { nextSetupBanner } from "@/lib/setup-progress";
 import { ConnectionRetryToast } from "@/components/ConnectionRetryToast";
 import { useHistoricalCandles } from "@/components/useHistoricalCandles";
 import { useSignalLedger } from "@/components/useSignalLedger";
-import { useNewsCalendar } from "@/components/useNewsCalendar";
-import { NEWS_SOURCE_URL } from "@/lib/news-calendar";
 import { LEDGER_KEY, parseLedger } from "@/lib/v26-signals";
 import { BROWSER_ALERT_HISTORY_KEY, browserAlertFor, eligibleForNewAlert, parseAlertHistory, rememberBrowserAlert } from "@/lib/v31/browser-alerts";
 import { notificationSupported, requestBrowserNotificationPermission, sendBrowserSignalNotification } from "@/components/browserNotifications";
@@ -423,9 +421,9 @@ function IndicatorCard({ vote }: { vote: IndicatorVote }) {
 
   return (
     <div className="mbiotraders-indicator-card" title={vote.description}>
-      <div className="mbiotraders-mini-graphic" aria-hidden="true">
-        <span />
-      </div>
+      <span className="mbiotraders-mini-graphic mbiotraders-underline-icon" aria-hidden="true">
+        <Underline size={16} strokeWidth={2.1} />
+      </span>
       <div className="mbiotraders-indicator-copy">
         <strong>{vote.name}</strong>
         <span className={`mbiotraders-pill ${direction}`}>{label}</span>
@@ -514,7 +512,6 @@ export function MarketDashboard() {
   const lastFeedIssue = useRef<string | null>(null);
   const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
   const { feed, reload } = useMarket(symbol);
-  const { guard: newsGuard } = useNewsCalendar(symbol, now);
 
   useEffect(() => {
     setNow(Date.now());
@@ -570,7 +567,6 @@ export function MarketDashboard() {
     bars15: payload.frames[900] ?? [],
     barsH1: payload.frames[3600] ?? [],
     historyLoading: frame === 300 ? chartHistory.loading : old5.loading,
-    allowNewSignals: newsGuard.allowed,
   });
   useEffect(() => {
     setNeedsOlder5(Boolean(tracker.active));
@@ -595,11 +591,6 @@ export function MarketDashboard() {
     lastFeedIssue.current = symbol;
     trackEvent("market_feed_unavailable", { market: symbol });
   }, [feed.error, feed.requestSymbol, symbol]);
-
-  useEffect(() => {
-    if (newsGuard.state !== "BLOCKED") return;
-    trackEvent("news_window_blocked", { market: symbol });
-  }, [newsGuard.state, symbol]);
 
   const downloadSignals = () => {
     if (!latestSignals.length) return;
@@ -759,7 +750,7 @@ export function MarketDashboard() {
   }, [selected]);
 
   const sourceMatches = !activeSignal || activeSignal.provider === payload.provider;
-  const setupStatus = activeSignal ? `${activeSignal.direction} active` : !newsGuard.allowed ? "News blocked" : setup.status !== "WAIT" ? `${setup.status} ready` : "Waiting for setup";
+  const setupBanner = nextSetupBanner(setup.criteria, setup.status, activeSignal?.direction);
   const floatingReturn =
     activeSignal && sourceMatches && currentPrice !== null
       ? ((activeSignal.direction === "BUY" ? 1 : -1) *
@@ -960,10 +951,16 @@ export function MarketDashboard() {
             </div>
             <div className="mbiotraders-signal-section">
               <div className="mbiotraders-row-between">
-                <span>{activeSignal ? "At activation" : "Confluence"}</span>
-                <strong>{activeSignal?.confidence ?? setup.score}%</strong>
+                <span>Current Confluence</span>
+                <strong aria-label={`Current confluence ${setup.score} percent`}>{setup.score}%</strong>
               </div>
-              <ConfidenceBar score={activeSignal?.confidence ?? setup.score} />
+              <ConfidenceBar score={setup.score} />
+              {activeSignal && (
+                <div className="mbiotraders-row-between mbiotraders-activation-confluence">
+                  <span>At activation</span>
+                  <strong>{activeSignal.confidence}%</strong>
+                </div>
+              )}
             </div>
             <div className="mbiotraders-details-list compact">
               <div><span>Entry Zone</span><strong>{price(activeSignal?.entry, instrument.precision)}</strong></div>
@@ -983,36 +980,9 @@ export function MarketDashboard() {
               ? tracker.warning
                 ? "TRACKING · Verification pending"
                 : "TRACKING until TP/SL"
-              : !newsGuard.allowed
-                ? "NEW SIGNALS PAUSED · Economic news guard"
-                : pendingSignal
-                  ? "WAITING for level breakout"
-                  : "WAITING for qualifying signal"}</div>
-            <div className={`mbiotraders-news-guard ${newsGuard.state.toLowerCase()}`} role="status">
-              <div className="mbiotraders-news-guard-heading">
-                <CalendarClock size={14} aria-hidden="true" />
-                <strong>High-impact news filter</strong>
-                <span>{newsGuard.state === "CLEAR" ? "CLEAR" : newsGuard.state === "BLOCKED" ? "PAUSED" : "CHECKING"}</span>
-              </div>
-              <p>{newsGuard.reason}</p>
-              {newsGuard.state === "CLEAR" && newsGuard.next && (
-                <small>
-                  Next {newsGuard.next.country} event: {newsGuard.next.title} · {newsGuard.next.time === null
-                    ? "Time unconfirmed"
-                    : new Intl.DateTimeFormat("en-GB", {
-                        timeZone: "Africa/Nairobi",
-                        day: "2-digit",
-                        month: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: false,
-                      }).format(newsGuard.next.time) + " EAT"}
-                </small>
-              )}
-              <a href={NEWS_SOURCE_URL} target="_blank" rel="noopener noreferrer">
-                Calendar data: Finance Calendar <ExternalLink size={12} aria-hidden="true" />
-              </a>
-            </div>
+              : pendingSignal
+                ? "WAITING for level breakout"
+                : "WAITING for qualifying signal"}</div>
           </section>
 
           <section className="mbiotraders-card mbiotraders-align-card" data-analytics-section="timeframe_alignment">
@@ -1083,15 +1053,11 @@ export function MarketDashboard() {
                   </b>
                 </div>
               ))}
-              <div className="mbiotraders-check-item">
-                <span className={`mbiotraders-check-icon ${newsGuard.allowed ? "ok" : "pending"}`}>
-                  {newsGuard.allowed ? <Check size={13} /> : <Clock3 size={12} />}
-                </span>
-                <div className="mbiotraders-check-copy"><strong>High-impact news window</strong></div>
-                <b className={newsGuard.allowed ? "up" : "flat"}>{newsGuard.allowed ? "Clear" : "Wait"}</b>
-              </div>
             </div>
-            <div className="mbiotraders-conclusion"><span>Setup Status</span><strong className={activeSignal ? statusClass(activeSignal.direction) : newsGuard.allowed ? setup.status === "WAIT" ? "flat" : statusClass(setup.status) : "flat"}>{setupStatus}</strong></div>
+            <div className="mbiotraders-conclusion" role="status" aria-live="polite" aria-atomic="true">
+              <span>Next qualification</span>
+              <strong className={setupBanner.tone}>{setupBanner.message}</strong>
+            </div>
           </section>
 
           <section className="mbiotraders-card mbiotraders-levels-card" data-analytics-section="key_levels">
@@ -1108,7 +1074,7 @@ export function MarketDashboard() {
           <section className="mbiotraders-card mbiotraders-tech-card" data-analytics-section="technical_indicators">
             <div className="mbiotraders-card-head mbiotraders-tech-head">
               <div>
-                <h2>Technical Indicators</h2>
+                <h2><Underline size={16} strokeWidth={2.1} aria-hidden="true" /> Technical Indicators</h2>
                 <div className="mbiotraders-quick-summary">
                   <div><span>Moving average</span><b className="up">Buy ({selected.moving.buy})</b><b className="down">Sell ({selected.moving.sell})</b></div>
                   <div>

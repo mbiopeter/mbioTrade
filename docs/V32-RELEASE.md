@@ -6,7 +6,7 @@ v32 is a presentation-only update on the rebuilt v31 source. The trading engine,
 
 ## Layout and responsive breakpoints
 
-- **Desktop, width >= 1200px:** compact three-column, four-row dashboard. The chart and current signal span two rows; Setup Details spans the two central rows. Alignment, indicators, recent signals, news status, levels and statistics remain visible. The old position hacks that caused horizontal overlaps were reset.
+- **Desktop, width >= 1200px:** compact three-column, four-row dashboard. The chart and current signal span two rows; Setup Details spans the two central rows. Alignment, indicators, recent signals, levels and statistics remain visible. The old position hacks that caused horizontal overlaps were reset.
 - **Desktop, width >= 1200px and viewport height >= 700px:** the grid takes the remaining height after the header using 100dvh, so normal desktop screens do not require vertical page scrolling. It was visually checked at 1200 x 700, 1280 x 720, 1366 x 768, 1440 x 900, and 1920 x 1080 using representative content. Screens shorter than 700px use natural document height to avoid hiding information.
 - **Tablets, width 761-1199px:** exactly two equal columns with the chart and trend-alignment cards spanning both; content height remains natural. At 768px, 834px and 1024px widths, there are no clipped cards in the representative-content viewport checks.
 - **Phones, width <= 760px:** one column with controls and cards kept in reading order.
@@ -14,7 +14,7 @@ v32 is a presentation-only update on the rebuilt v31 source. The trading engine,
 
 ## Signal Guide PDF
 
-Use **Signal Guide** beside **Alerts** in the header. The browser downloads the bundled file from `public/mbiotraders-signal-guide.pdf`. It is a 10-page illustrated strategy guide with BUY/SELL candle charts and no version number in its title, page headers, prose or PDF metadata. A separate backend route is not required. The file is about 110KB.
+Use **Signal Guide** beside **Alerts** in the header. The browser downloads the bundled file from `public/mbiotraders-signal-guide.pdf`. The current bundled file is a 7-page illustrated strategy guide with BUY/SELL candle charts and no version number in its title, page headers, prose or PDF metadata. A separate backend route is not required. The embedded illustrations and typography are included in the PDF.
 
 ## Notification status
 

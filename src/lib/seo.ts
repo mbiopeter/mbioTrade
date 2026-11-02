@@ -1,7 +1,7 @@
 
 const FALLBACK = "https://traders.mbiopeter.co.ke";
 export const SITE_NAME = "mbioTraders";
-export const SITE_DESCRIPTION = "Research-only market signals for gold, five forex pairs and Bitcoin (BTCUSD). See real-data charts, five-timeframe trend checks, 5-minute entry confirmations, economic-news safeguards and downloadable signal analysis.";
+export const SITE_DESCRIPTION = "Research-only market signals for gold, five forex pairs and Bitcoin (BTCUSD). See real-data charts, five-timeframe trend checks, 5-minute entry confirmations, key-free public market feeds and downloadable signal analysis.";
 
 export function siteOrigin(value = process.env.NEXT_PUBLIC_SITE_URL): string {
   if (!value) return FALLBACK;

@@ -1,79 +1,51 @@
-## 34.0.0 — Clean setup checklist and installable web app
+# mbioTraders releases
 
-- Larger, single-line-first Signal Setup condition labels without explanatory text, retaining Yes/Wait/Clear statuses.
-- Desktop/mobile Install App control, native prompt where supported, and platform-specific manual installation instructions.
-- Next.js App Router PWA manifest, installable icons, offline page, and unified service worker preserving existing notification handling.
-- All live market and economic-news API requests bypass offline caching; existing trading logic and provider fixes unchanged.
+## v37
 
-# Changelog
+- Lighter, smaller text in Signal Setup Details.
+- Square-corner setup information banner advances through the first unmet technical qualification.
+- Current Signal always shows live Current Confluence; activation confidence remains visible separately for active signals.
+- U-with-underline icon restored for Technical Indicators.
+- Rebuilt the downloadable technical signal guide in white mode.
+- Retains public Deriv/Kraken feeds, all seven instruments, entry timing, pivot SL, 2R TP, signal history, browser notifications, installable PWA, Analytics, and SEO.
 
-## v33.0.0
+# mbioTraders changelog
 
-- Increased heading and data-label font sizes in Multi-Timeframe Trend Alignment, Overall Market Strength, Signal Setup Details, Key Levels and Market Statistics while keeping the compact responsive layout.
-- Added BTCUSD as the seventh instrument, trading with Kraken public spot BTC/USD 5m, 15m, 30m, 1H, 4H and 1D OHLC and live WebSocket ticker prices (no crypto API key required).
-- Rate-limited Kraken OHLC requests and respected the provider's 720-candle lookback limit; missing or interrupted market data fails closed and historical candles are never invented.
-- Added BTCUSD to saved trade history, one-active-signal-per-pair tracking, browser notifications, chart selection, CSV and USD high-impact news protection.
-- Preserved the existing five-frame alignment and third-5m-bar confirmation, prior-swing stop, 2R target, persistence, and all six former instruments.
-- Pinned Node.js to 24.x for predictable Vercel builds, with matching package-lock.json and .nvmrc.
+## v36.0.0 — Public technical market signals
 
+- Kept public Deriv data for Gold and five forex pairs, and public Kraken data for BTCUSD.
+- Preserved verified candle freshness, multi-timeframe consensus and strict 5m entry confirmation.
+- Preserved earlier-pivot stops, exact 2R targets, active signal persistence and verified exits.
+- Preserved paced feed requests, short verified cache, automatic retries and reconnection.
+- Kept action buttons next to the mbioTraders title at phone browser widths using compact icons.
+- Retained installable PWA, browser notifications, GA4 analytics, SEO, history and CSV export.
+- Updated the downloadable illustrated strategy guide and documentation to describe the current market-only workflow.
 
-## v32.0.0
+## v35 — Analytics and feed resilience
 
-- Compressed all nine dashboard sections into a viewport-fit three-column layout for standard desktop resolutions without losing the full Signal Setup checklist.
-- Added a natural-height two-column tablet layout and retained one-column mobile presentation.
-- Removed visible notification status banners from the top bar while retaining real browser/OS alerts, sound, permission handling and accessible status.
-- Added a prominent Signal Guide PDF download beside Alerts; the bundled illustrated 10-page PDF has no version numbers in its visible content or metadata.
-- Preserved the v31 five-timeframe/5m signal logic, news guard, storage, 100-signal history, two-row pagination, CSV, charting and all existing functionality.
-- Updated and verified package-lock.json so `npm ci` remains usable.
+- Added GA4 pageview, navigation, market selection, alert and download events with opt-out.
+- Strengthened SEO with an indexable methodology page, sitemap, metadata and verification controls.
+- Reduced duplicate upstream calls through short verified caching and paced history requests.
 
+## v34 — PWA installation
 
-## v31.0.0
+- Added a standalone installable app experience for supported desktop and mobile browsers.
+- Streamlined the Signal Setup Details card and preserved original market signal logic.
 
-- Rebuilt directly from the uploaded v30 source and preserved economic-news gating, saved signals, 100-trade history, CSV and 2-row pagination.
-- Required only 15m, 30m, 1H, 4H and 1D trend alignment, with 5m used exclusively for entries.
-- Required a 5m countertrend pullback followed by two >=60% body confirmation candles and an actual third-bar opening price.
-- Set the stop at an older confirmed 5m swing high/low and take profit at 2R; no synthetic entry or ATR-derived stop substitutes.
-- Showed the entire Signal Setup Details checklist and reason without clipping, ellipses or internal scrolling.
-- Added permission-based OS/browser notifications for new BUY/SELL signals with exact entry, SL and TP, service-worker display and duplicate suppression.
-- Included and synchronized the npm lockfile to fix the npm ci error in the earlier v31 release.
+## v33 — Bitcoin and typography
 
-## v30.0.0
+- Added BTCUSD through public Kraken market data and increased key dashboard text sizes.
 
-- Changed Recent Signals pagination to two completed results per page.
-- Added spacing below pagination navigation without changing the existing dashboard layout.
-- Added a server-side high-impact economic-calendar feed for the supported forex and Gold markets.
-- Paused all new signal activation from three hours before through two hours after relevant high-impact news.
-- Added conservative protection for announcements with unknown release hours.
-- Paused new signals whenever the calendar cannot be verified; active SL/TP tracking remains operational.
-- Added a compact news-status display and source attribution to the existing signal panel.
-- Preserved all existing 100-result history, CSV export, market statistics and saved active signals.
+## v32 — Responsive density
 
-## v29.0.0
+- Optimized the compact desktop dashboard, introduced two-column tablet layouts and added a downloadable guide.
 
-- Increased the stored completed-signal limit from 50 per pair to 100 across all supported pairs.
-- Reduced Recent Signals to Time, Direction, Pair and Result columns.
-- Added three-result pagination with Previous and Next controls.
-- Added one-click CSV export of the entire stored history using ISO 8601 UTC timestamps.
-- Preserved v26 localStorage keys, existing active signals and historical outcomes.
-- Aligned Market Statistics with the same 100 most recent completed outcomes.
-- Preserved every v28 chart, signal, market-feed, audio, SEO and responsive-header feature.
+## v31 — Entry refinement
 
+- Required all higher timeframes to align, with the 5m chart used only for entry timing.
+- Implemented two completed 60%-body confirmation candles and third-candle opening entries, earlier swing stops, and 2R targets.
+- Added genuine desktop/browser alerts for newly activated signals.
 
-## v28.0.0
+## Earlier releases
 
-- Refined the header for compact mobile screens with visible live-feed status and touch-scrollable market/timeframe buttons.
-- Removed the secondary entry, stop-loss and take-profit chart lines; retained shaded long/short risk/reward regions and their attached value labels.
-- Fixed nullable provider typing within asynchronous market-history requests.
-- Removed authored comments from project code, styles, tests and configuration files.
-- Preserved persistent paper signals, 7-day momentum defaults, instrument selection, indicator gauge, backfill, alerts and SEO.
-
-## v27.0.0
-
-- Introduced retry toast and revised header.
-- Retained historical data loading and persistent signal management.
-
-## v35
-- Dedicated GA4 tracking for page views, scroll depth, UI and chart controls, PDF/CSV downloads, PWA install, notifications, news blocks and feed status, with a local opt-out.
-- Search-friendly methodology page, expanded canonical metadata, sitemap and optional Search Console verification.
-- Hide the PWA install control when already installed; keep compact header action icons immediately to the right of the mbioTraders title on phones.
-- Preserve the trading strategies, data providers, calendar/news safety checks, browser notifications and all seven instruments.
+- Established live indicator calculations, multi-pair charts, history persistence, retry handling, CSV export and accessible responsive controls.

@@ -23,6 +23,6 @@ The logo wrapper now has `display: "flex"` and `alignItems: "baseline"`, retaini
 
 The `npm warn Unknown env config "cache-dir"` message is not the cause of this failure. It can be addressed separately by removing the unsupported setting from any `.npmrc` or external npm environment configuration. Don't remove `npm` cache settings without checking their source.
 
-Set `NEXT_PUBLIC_SITE_URL=https://traders.mbiopeter.co.ke` in your Vercel Production environment for the correct canonical and sitemap URLs. Keep all secrets such as `TWELVE_DATA_API_KEY` server-side.
+Set `NEXT_PUBLIC_SITE_URL=https://traders.mbiopeter.co.ke` in your Vercel Production environment for the correct canonical and sitemap URLs. Never expose private credentials in browser-readable environment variables.
 
 No signal engine, chart, indicator, layout, or market data code has been modified.

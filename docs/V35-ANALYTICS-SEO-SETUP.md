@@ -1,6 +1,6 @@
 # mbioTraders v35 — Google Analytics and SEO setup
 
-This package keeps the v34 market-data, signal, news, ledger, PWA, notifications and responsive dashboard features. It adds GA4 event measurement, indexable explanatory content, and a compact mobile header.
+This package keeps the v34 market-data, signal, ledger, PWA, notifications and responsive dashboard features. It adds GA4 event measurement, indexable explanatory content, and a compact mobile header.
 
 ## 1. Connect Google Analytics 4
 
@@ -44,7 +44,6 @@ Do not commit `.env.local`. `NEXT_PUBLIC_GA_ID` is a public property identifier,
 | `signal_active_view` | A confirmed active signal first becomes visible this session | `market`, `direction` |
 | `signal_notification_sent` | OS/browser notification request succeeds | `market`, `direction` |
 | `market_feed_unavailable` | Market data fails in selected pair | `market` |
-| `news_window_blocked` | High-impact news blocks a new entry | `market` |
 
 Analytics is a **site usage** tool. Some events may be blocked by browser privacy settings, network failures or the visitor's tracking opt-out. `signal_active_view` measures a displayed active signal, not a unique trade opening globally. Analytics does not transmit signal price levels, saved trading results, authorization tokens, private URLs, or raw typed content.
 

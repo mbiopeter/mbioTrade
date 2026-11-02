@@ -3,8 +3,7 @@
 ## Source base
 
 - Rebuilt from the supplied `mbiotraders-v34(1).zip`.
-- Existing v34 signal calculations, indicator algorithms, market-data providers, economic-calendar safeguards, signal journal and notification delivery were preserved.
-- Comparison against uploaded v34: all 13 existing trading library files (except the intentionally updated SEO helper) are byte-for-byte unchanged; existing PWA service worker, browser notifications module, signal-ledger hook and both market/news API routes are byte-for-byte unchanged.
+- Existing v34 signal calculations, indicator algorithms, market-data providers, signal journal and notification delivery were preserved.
 
 ## Checks
 

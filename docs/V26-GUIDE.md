@@ -32,7 +32,7 @@ then attempt to reconstruct price touches during the browser's absence. If
 past candles are missing or the price provider has changed, reconciliation
 pauses and the plan stays active. Audio alerts only work with an open tab.
 
-The chart attempts to retrieve 90 calendar days of genuine selected-provider
+The chart attempts to retrieve 90 days of genuine selected-provider
 OHLC in cursor-paged requests. The screen shows actual coverage and the
 amount of downloaded data. Data access is **best effort**: free providers
 may restrict long 5m history, subscription-level data, or request quotas;

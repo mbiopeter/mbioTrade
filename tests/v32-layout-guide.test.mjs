@@ -9,8 +9,8 @@ const pkg = JSON.parse(read("package.json"));
 const lock = JSON.parse(read("package-lock.json"));
 
 test("v32 includes synchronized npm install lockfile", () => {
-  assert.equal(pkg.name, "mbiotraders-v35");
-  assert.equal(pkg.version, "35.0.0");
+  assert.equal(pkg.name, "mbiotraders-v37");
+  assert.equal(pkg.version, "37.0.0");
   assert.equal(pkg.name, lock.name);
   assert.equal(pkg.version, lock.version);
   assert.equal(pkg.version, lock.packages[""].version);
@@ -58,10 +58,10 @@ test("notification success message does not occupy top bar while alerts are reta
   assert.match(styles, /\.mbiotraders-alert-tools \{ grid-area: alerts/);
 });
 
-test("v31 strategy, economic news, ledger, CSV and real alert modules remain connected", () => {
+test("v36 strategy, ledger, CSV and real alert modules remain connected", () => {
   assert.match(dashboard, /inspectConfluence\(payload, now, safeMomentumDays\)/);
   assert.match(dashboard, /useSignalLedger\(/);
-  assert.match(dashboard, /useNewsCalendar\(symbol, now\)/);
+  assert.match(dashboard, /setup\.criteria\.map/);
   assert.match(dashboard, /useHistoricalCandles\(/);
   assert.match(dashboard, /exportSignalsCsv\(/);
   assert.match(dashboard, /rememberBrowserAlert\(/);

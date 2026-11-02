@@ -1,8 +1,8 @@
 {
-  "name": "mbiotraders-v35",
-  "version": "35.0.0",
+  "name": "mbiotraders-v37",
+  "version": "37.0.0",
   "private": true,
-  "description": "mbioTraders v35: GA4 event analytics and search indexing improvements, smarter installed-PWA controls and responsive mobile header; preserves all v34 trading features.",
+  "description": "mbioTraders v37: stepwise technical setup guidance, live confluence, refreshed indicators, white signal guide, key-free public market signals, PWA, GA4 and SEO.",
   "engines": {
     "node": "24.x"
   },

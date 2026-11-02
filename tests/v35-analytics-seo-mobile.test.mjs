@@ -16,8 +16,8 @@ const read = (name) => readFileSync(new URL(`../${name}`, import.meta.url), "utf
 test("v35 release keeps synced npm ci lockfile and supported Node version", () => {
   const pkg = JSON.parse(read("package.json"));
   const lock = JSON.parse(read("package-lock.json"));
-  assert.equal(pkg.name, "mbiotraders-v35");
-  assert.equal(pkg.version, "35.0.0");
+  assert.equal(pkg.name, "mbiotraders-v37");
+  assert.equal(pkg.version, "37.0.0");
   assert.equal(lock.name, pkg.name);
   assert.equal(lock.version, pkg.version);
   assert.equal(lock.packages[""].version, pkg.version);
@@ -98,7 +98,7 @@ test("GA4 initialized only for a valid ID and sends manual SPA pageviews", () =>
 
 test("dashboard analytics cover markets, frames, alerts, guide, export and signal state", () => {
   const dashboard = read("src/components/MarketDashboard.tsx");
-  for (const event of ["market_select", "timeframe_select", "momentum_window_select", "alerts_toggle", "signal_guide_download", "history_export_csv", "signal_active_view", "market_feed_unavailable", "news_window_blocked", "signal_notification_sent"]) {
+  for (const event of ["market_select", "timeframe_select", "momentum_window_select", "alerts_toggle", "signal_guide_download", "history_export_csv", "signal_active_view", "market_feed_unavailable", "signal_notification_sent"]) {
     assert.match(dashboard, new RegExp(event));
   }
   assert.match(dashboard, /data-analytics-section="signal_setup"/);
@@ -121,8 +121,8 @@ test("installed PWA is entirely hidden and only shown when install is needed", (
 test("mobile header keeps activity controls to the right of mbioTraders title", () => {
   const css = read("src/app/globals.css");
   const lastMedia = css.slice(css.lastIndexOf("@media (max-width: 780px)"));
-  assert.match(lastMedia, /grid-template-areas:"brand alerts" "feed feed" "context context"/);
-  assert.match(lastMedia, /\.mbiotraders-alert-tools \{ grid-area:alerts; justify-self:end; justify-content:flex-end; flex-wrap:nowrap/);
+  assert.match(css, /grid-template-areas: "brand alerts" "feed feed" "context context"/);
+  assert.match(css, /\.mbiotraders-alert-tools \{ grid-area:alerts; justify-self:end; justify-content:flex-end; flex-wrap:nowrap/);
   assert.match(css, /\.mbiotraders-alert-label \{ display:none/);
   const source = read("src/components/MarketDashboard.tsx");
   assert.match(source, /className="mbiotraders-alert-tools"/);

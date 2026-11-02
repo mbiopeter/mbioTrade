@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   keywords: [
     "mbioTraders", "live forex signals", "gold signals", "XAUUSD technical analysis", "BTCUSD crypto signals", "Bitcoin market strength",
     "market strength gauge", "multi timeframe analysis", "EURUSD", "GBPUSD",
-    "technical indicators", "forex dashboard", "BTCUSD analysis", "Bitcoin signals", "five-minute entry confirmation", "economic news filter",
+    "technical indicators", "forex dashboard", "BTCUSD analysis", "Bitcoin signals", "five-minute entry confirmation", "public market data",
   ],
   alternates: { canonical: "/" },
   icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }], apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }] },

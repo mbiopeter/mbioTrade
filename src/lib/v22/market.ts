@@ -168,87 +168,95 @@ export async function fetchDeriv(symbol: MarketSymbol, socketFactory?: SocketFac
   const factory = socketFactory ?? ((url:string)=> new WebSocket(url) as unknown as WebSocketLike);
   const url = "wss://api.derivws.com/trading/v1/options/ws/public";
   const frames: FrameSeries = {};
-  const warnings:string[] = [];
+  const warnings: string[] = [];
   await new Promise<void>((resolve,reject)=>{
     let settled = false;
-    let count = 0;
-    let socket:WebSocketLike;
-    const timer = setTimeout(()=>finish(new Error("Public market feed timed out")),16000);
+    let socket: WebSocketLike | undefined;
+    let sendTimer: ReturnType<typeof setTimeout> | undefined;
+    const answered = new Set<number>();
+    const timer = setTimeout(()=>finish(new Error("Deriv public market feed timed out before all six timeframes arrived")),16000);
     function finish(error?:Error) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      try {socket?.close();} catch {  }
+      if (sendTimer !== undefined) clearTimeout(sendTimer);
+      try { socket?.close(); } catch { }
       error ? reject(error) : resolve();
     }
-    try {socket = factory(url);} catch(e) {finish(e instanceof Error?e:new Error("WebSocket unavailable"));return;}
+    try { socket = factory(url); }
+    catch(error) { finish(error instanceof Error ? error : new Error("Deriv WebSocket unavailable")); return; }
     socket.addEventListener("open",()=> {
-      for (const [index,frame] of FRAMES.entries()) {
-        try {socket.send(JSON.stringify({ticks_history:instrument.deriv,style:"candles",granularity:frame,count:260,end:"latest",adjust_start_time:1,req_id:100+index}));}
-        catch {finish(new Error("Market-data WebSocket send failed"));return;}
-      }
+      let index = 0;
+      const sendNext = () => {
+        if (settled || !socket || index >= FRAMES.length) return;
+        const frame = FRAMES[index];
+        try {
+          socket.send(JSON.stringify({
+            ticks_history:instrument.deriv,
+            style:"candles",
+            granularity:frame,
+            count:260,
+            end:"latest",
+            adjust_start_time:1,
+            req_id:100+index,
+          }));
+        } catch { finish(new Error(`Deriv ${FRAME_LABELS[frame]} candle request failed`)); return; }
+        index++;
+        if (index < FRAMES.length) sendTimer = setTimeout(sendNext, 140);
+      };
+      sendNext();
     });
-    socket.addEventListener("message",(event)=>{
-      if(settled)return;
+    socket.addEventListener("message",event=>{
+      if (settled) return;
       try {
         const raw = typeof event.data === "string" ? event.data : String(event.data);
-        const payload = JSON.parse(raw) as {req_id?:number;error?:{message?:string};candles?:unknown};
-        const index= (payload.req_id ?? 0)-100;
-        if (index<0 || index>=FRAMES.length) return;
+        const payload = JSON.parse(raw) as {
+          req_id?:number;
+          error?:{message?:string;code?:string};
+          candles?:unknown;
+        };
+        const index = (payload.req_id ?? 0) - 100;
+        if (!Number.isInteger(index) || index < 0 || index >= FRAMES.length) {
+          if (payload.error) {
+            const message = String(payload.error.message ?? payload.error.code ?? "Deriv request rejected");
+            finish(new Error(`Deriv: ${message.slice(0,160)}`));
+          }
+          return;
+        }
+        if (answered.has(index)) return;
         const frame = FRAMES[index];
-        if (payload.error) warnings.push(`${FRAME_LABELS[frame]}: ${String(payload.error.message ?? "Deriv feed unavailable").slice(0,160)}`);
-        else {
-          try {frames[frame]=parseCandles(payload.candles,frame,"epoch");}
-          catch {warnings.push(`${FRAME_LABELS[frame]} history invalid`);}
+        if (payload.error) {
+          const message = String(payload.error.message ?? payload.error.code ?? "Deriv data unavailable");
+          finish(new Error(`Deriv: ${FRAME_LABELS[frame]}: ${message.slice(0,160)}`));
+          return;
         }
-        count++;
-        if(count===FRAMES.length) {
-          if (warnings.length) { finish(new Error(`Deriv: ${warnings.join("; ").slice(0,450)}`)); return; }
-          try {validateFrames(frames);finish();} catch(e) {finish(e as Error);}
+        try { frames[frame] = parseCandles(payload.candles,frame,"epoch"); }
+        catch(error) {
+          const reason = error instanceof Error ? error.message : "Invalid candles";
+          finish(new Error(`Deriv: ${FRAME_LABELS[frame]} history invalid: ${reason.slice(0,160)}`));
+          return;
         }
-      } catch {}
+        answered.add(index);
+        if (answered.size === FRAMES.length) {
+          try { validateFrames(frames); finish(); }
+          catch(error) { finish(error instanceof Error ? error : new Error("Incomplete timeframe data")); }
+        }
+      } catch { }
     });
-    socket.addEventListener("error",()=>finish(new Error("Public market socket connection failed")));
-    socket.addEventListener("close",()=>{if (!settled)finish(new Error("Market-data socket closed before replies"));});
+    socket.addEventListener("error",()=>finish(new Error("Deriv public WebSocket connection failed")));
+    socket.addEventListener("close",()=>{
+      if (!settled) finish(new Error(`Deriv socket closed with ${answered.size} of 6 verified timeframes`));
+    });
   });
   return {
-    symbol,provider:"deriv",providerName:"Deriv · public streaming market",
+    symbol, provider:"deriv", providerName:"Deriv · public streaming market",
     sourceNote:"Public Deriv market data, no account or API key. Candles are refreshed and live quotes stream through a separate public connection. Quotes may differ from other brokers.",
-    fetchedAt:Date.now(),frames,warnings,streamSymbol:instrument.deriv,
+    fetchedAt:Date.now(), frames, warnings, streamSymbol:instrument.deriv,
   };
 }
 
 
-export async function fetchMarket(symbol: MarketSymbol, key = process.env.TWELVE_DATA_API_KEY ?? ""): Promise<MarketPayload> {
-  if (symbol === "BTCUSD") {
-    try { return await fetchKraken(symbol); }
-    catch (error) {
-      if (!key.trim()) throw error;
-      const fallback = await fetchTwelveData(symbol, key.trim());
-      fallback.warnings.push("Kraken BTC/USD was unavailable; using Twelve Data BTC/USD snapshots (live streaming paused).");
-      return fallback;
-    }
-  }
-  if (key.trim()) {
-    try { return await fetchTwelveData(symbol, key.trim()); }
-    catch (primaryError) {
-      try {
-        const fallback = await fetchDeriv(symbol);
-        fallback.warnings.push("Preferred provider unavailable; using public Deriv history. Configure or review TWELVE_DATA_API_KEY to restore Twelve Data.");
-        return fallback;
-      } catch (secondaryError) {
-        const first = primaryError instanceof Error ? primaryError.message : "Twelve Data unavailable";
-        const second = secondaryError instanceof Error ? secondaryError.message : "Deriv unavailable";
-        throw new Error(`Twelve Data: ${first.slice(0,160)}; Deriv: ${second.slice(0,450)}`);
-      }
-    }
-  }
-  try {
-    const fallback = await fetchDeriv(symbol);
-    fallback.warnings.push("No Twelve Data key configured. Using the free unauthenticated market feed.");
-    return fallback;
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : "Public feed unavailable";
-    throw new Error(`${reason.slice(0,450)}. No Twelve Data API key is configured; set TWELVE_DATA_API_KEY to enable the alternate provider.`);
-  }
+export async function fetchMarket(symbol: MarketSymbol): Promise<MarketPayload> {
+  if (symbol === "BTCUSD") return fetchKraken(symbol);
+  return fetchDeriv(symbol);
 }
